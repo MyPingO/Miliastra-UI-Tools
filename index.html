@@ -21,7 +21,7 @@ html,body,#app{width:100%;height:100%;margin:0;background:#090d16}
 (async()=>{
   try{
     const opts={cache:'no-store'};
-    const version='20260905k';
+    const version='20260905l';
     const [sourceRes,cssRes,jsRes,statusRes,deckRes]=await Promise.all([
       fetch('https://raw.githubusercontent.com/MyPingO/Miliastra-UI-Tools/14b43989be0c9954d72718a1ff530412e1b34c87/index.html',opts),
       fetch(`./assets/site.css?v=${version}`,opts),
