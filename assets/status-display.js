@@ -4,9 +4,10 @@ const assetRoot=new URL('./assets/',window.parent.location.href);
 const base=new URL('status-v2.part',assetRoot).href;
 (async()=>{
   try{
-    const [responses,labelRes]=await Promise.all([
-      Promise.all([1,2,3,4,5,6].map(i=>fetch(`${base}${i}.txt?v=20260905h`,{cache:'no-store'}))),
-      fetch(new URL('type-labels.js?v=20260905h',assetRoot),{cache:'no-store'})
+    const [responses,labelRes,deckRes]=await Promise.all([
+      Promise.all([1,2,3,4,5,6].map(i=>fetch(`${base}${i}.txt?v=20260905i`,{cache:'no-store'}))),
+      fetch(new URL('type-labels.js?v=20260905i',assetRoot),{cache:'no-store'}),
+      fetch(new URL('deck-selector.js?v=20260905i',assetRoot),{cache:'no-store'})
     ]);
     if(responses.some(r=>!r.ok))throw new Error('Failed to load Status Display editor modules');
     let code=(await Promise.all(responses.map(r=>r.text()))).join('');
@@ -32,11 +33,12 @@ const base=new URL('status-v2.part',assetRoot).href;
       );
 
     new Function(code)();
+    if(deckRes.ok)new Function(await deckRes.text())();
     const deckTitle=document.getElementById('newDeckButton')?.closest('.build-card')?.querySelector('h3');
     if(deckTitle)deckTitle.textContent='Deck Selector';
     if(labelRes.ok)new Function(await labelRes.text())();
   }catch(error){
-    console.error('Status Display editor failed to load',error);
+    console.error('Component enhancement loader failed',error);
   }
 })();
 })();
