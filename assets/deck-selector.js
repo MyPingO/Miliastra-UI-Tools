@@ -3,6 +3,9 @@
 if(typeof DeckSelectorDocument==='undefined'||typeof parseFields!=='function')return;
 
 const colorNames=['White','Green','Blue','Purple','Orange','Red'];
+/* Confirmed from Deck Selector Test(3).gia: visible colors 1..6 serialize as
+   0,1,2,3,4,9. Red is NOT internal value 5. */
+const colorInternal=[0,1,2,3,4,9];
 const concat=(...parts)=>{const len=parts.reduce((n,p)=>n+p.length,0),out=new Uint8Array(len);let o=0;for(const p of parts){out.set(p,o);o+=p.length}return out};
 const field=(fs,n,w=null)=>fs.find(f=>f.number===n&&(w===null||f.wireType===w));
 const num=(fs,n,def=0)=>{const f=field(fs,n,0);return f?Number(f.value):def};
@@ -112,14 +115,14 @@ createNewDeckGia=function(){
 
 const originalColorLabel=deckColorLabel;
 deckColorLabel=function(value){
-  const n=Number(value);
-  return Number.isInteger(n)&&n>=0&&n<6?`${n+1} ${colorNames[n]}`:originalColorLabel(value);
+  const n=Number(value),idx=colorInternal.indexOf(n);
+  return idx>=0?`${idx+1} ${colorNames[idx]}`:originalColorLabel(value);
 };
 
 function installUi(){
   const inspector=document.getElementById('deckInspector');if(!inspector||document.getElementById('deckPageSettings'))return;
   const style=document.createElement('style');
-  style.textContent='.deck-settings{margin:0 0 12px;padding:10px;border:1px solid #27364d;border-radius:9px;background:#0c1421}.deck-settings h3{margin:0 0 8px;font-size:12px;color:#c7d3e3}.deck-settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px 9px}.deck-settings .field{margin:0}.deck-toggle{display:flex;align-items:center;gap:7px;min-height:34px;padding:6px 8px;border:1px solid #2b3950;border-radius:7px;background:#0b121e;color:#aebed2;font-size:11px}.deck-toggle input{width:auto}.deck-span2{grid-column:1/-1}@media(max-width:1100px){.deck-settings-grid{grid-template-columns:1fr}.deck-span2{grid-column:auto}}';
+  style.textContent='.deck-settings{margin:0 0 12px;padding:10px;border:1px solid #27364d;border-radius:9px;background:#0c1421}.deck-settings h3{margin:0 0 8px;font-size:12px;color:#c7d3e3}.deck-settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px 9px}.deck-settings .field{margin:0}.deck-toggle{display:flex;align-items:center;gap:7px;min-height:34px;padding:6px 8px;border:1px solid #2b3950;border-radius:7px;background:#0b121e;color:#aebed2;font-size:11px}.deck-toggle input{width:auto}@media(max-width:1100px){.deck-settings-grid{grid-template-columns:1fr}}';
   document.head.append(style);
   const panel=document.createElement('div');panel.id='deckPageSettings';panel.className='deck-settings';
   panel.innerHTML='<h3>Deck Selector Settings</h3><div class="deck-settings-grid">'+
@@ -149,9 +152,9 @@ function installUi(){
     if(control.tagName==='INPUT'&&control.type!=='checkbox')control.addEventListener('input',commit);
   });
 
-  const oldType=document.getElementById('deckType'),oldColor=document.getElementById('deckTagCode'),icon=document.getElementById('deckIcon');
+  const oldType=document.getElementById('deckType'),oldColor=document.getElementById('deckTagCode');
   if(oldType){const box=oldType.closest('.checkbox-box');if(box)box.style.display='none';const select=document.createElement('select');select.id='deckTypeSelect';select.innerHTML='<option value="known">Known Deck</option><option value="unknown">Unknown Deck</option>';box?.insertAdjacentElement('afterend',select);select.addEventListener('change',()=>{oldType.checked=select.value==='known';applyGiaFields(true,true);syncUi()})}
-  if(oldColor){oldColor.style.display='none';const select=document.createElement('select');select.id='deckColorSelect';select.innerHTML=colorNames.map((name,i)=>`<option value="${i+1}">${i+1} ${name}</option>`).join('');oldColor.insertAdjacentElement('afterend',select);select.addEventListener('change',()=>{oldColor.value=String(Number(select.value)-1);applyGiaFields(true,true);syncUi()});const lab=oldColor.closest('.field')?.querySelector('label');if(lab)lab.textContent='Tag Color'}
+  if(oldColor){oldColor.style.display='none';const select=document.createElement('select');select.id='deckColorSelect';select.innerHTML=colorNames.map((name,i)=>`<option value="${i+1}">${i+1} ${name}</option>`).join('');oldColor.insertAdjacentElement('afterend',select);select.addEventListener('change',()=>{oldColor.value=String(colorInternal[Number(select.value)-1]);applyGiaFields(true,true);syncUi()});const lab=oldColor.closest('.field')?.querySelector('label');if(lab)lab.textContent='Tag Color'}
 }
 
 function syncUi(){
@@ -162,8 +165,8 @@ function syncUi(){
   const item=selectedIndex==null?null:currentDocument.items[selectedIndex];
   if(item){
     const type=document.getElementById('deckTypeSelect');if(type)type.value=item.deckType?'known':'unknown';
-    const icon=document.getElementById('deckIcon');if(icon){icon.disabled=!item.deckType;icon.title=item.deckType?'':'Unknown Decks do not display a custom Deck Icon.'}
-    const color=document.getElementById('deckColorSelect');if(color){const display=Number(item.internalTagCode)+1;color.value=display>=1&&display<=6?String(display):'1'}
+    const icon=document.getElementById('deckIcon');if(icon){icon.disabled=!item.deckType;icon.title=item.deckType?'':'Unknown Decks do not display a custom Deck Icon. Existing serialized icon IDs are preserved.'}
+    const color=document.getElementById('deckColorSelect');if(color){const idx=colorInternal.indexOf(Number(item.internalTagCode));color.value=idx>=0?String(idx+1):'1'}
   }
 }
 
@@ -178,7 +181,7 @@ importCsv=async function(file){
   if(isDeck){try{const rows=parseCsv(await file.text());hasDisplayColor=rows.length&&Object.keys(rows[0]).some(k=>['Tag Color','Tag Color Index'].includes(k))}catch{}}
   await originalImportCsv(file);
   if(isDeck&&hasDisplayColor&&currentDocument?.kind==='gia-deck'){
-    for(const item of currentDocument.items){const n=Number(item.internalTagCode);if(Number.isInteger(n)&&n>=1&&n<=6){item.internalTagCode=n-1;item.rawMessage=updateDeckEntry(item)}}
+    for(const item of currentDocument.items){const display=Number(item.internalTagCode);if(Number.isInteger(display)&&display>=1&&display<=6){item.internalTagCode=colorInternal[display-1];item.rawMessage=updateDeckEntry(item)}}
     renderGia();updateMeta();
   }
 };
