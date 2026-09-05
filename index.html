@@ -21,7 +21,7 @@ html,body,#app{width:100%;height:100%;margin:0;background:#090d16}
 (async()=>{
   try{
     const opts={cache:'no-store'};
-    const version='20260905j';
+    const version='20260905k';
     const [sourceRes,cssRes,jsRes,statusRes,deckRes]=await Promise.all([
       fetch('https://raw.githubusercontent.com/MyPingO/Miliastra-UI-Tools/14b43989be0c9954d72718a1ff530412e1b34c87/index.html',opts),
       fetch(`./assets/site.css?v=${version}`,opts),
@@ -37,7 +37,9 @@ html,body,#app{width:100%;height:100%;margin:0;background:#090d16}
     let status=await statusRes.text();
     const deck=await deckRes.text();
 
-    js=js.replace(/const density=document\.createElement\('button'\);[\s\S]*?syncDensity\(\);const shortcuts=/,'const shortcuts=');
+    js=js
+      .replace(/const density=document\.createElement\('button'\);[\s\S]*?syncDensity\(\);const shortcuts=/,'const shortcuts=')
+      .replace("if(exportButton){exportButton.insertAdjacentElement('afterend',shortcuts);shortcuts.insertAdjacentElement('afterend',density)}else topbar.append(shortcuts,density);","if(exportButton){exportButton.insertAdjacentElement('afterend',shortcuts)}else topbar.append(shortcuts);");
     source=source.replace(/(VARIABLE_NAME_MAX_LENGTH\s*=\s*)20/g,'$130');
 
     status=status
