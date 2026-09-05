@@ -18,20 +18,20 @@ https://mypingo.github.io/Miliastra-UI-Tools/
 
 ### Deck Selector notes
 
-Deck Selector supports **Known Deck** and **Unknown Deck** rows. Unknown Decks do not display their custom Deck Icon until revealed by the game/editor behavior, so the icon field is disabled for Unknown Deck rows in the site while existing serialized values remain preserved.
+Deck Selector supports **Known Deck** and **Unknown Deck** rows. Unknown Decks do not display their custom Deck Icon in the selector, but an icon ID can still remain serialized in the file. The site therefore disables the icon field for Unknown Deck rows while preserving any existing serialized value.
 
-Tag colors use Miliastra's zero-based serialized values internally while the UI uses the editor-facing 1–6 numbering:
+Tag colors use Miliastra-specific serialized values internally while the UI uses the editor-facing 1–6 numbering. The mapping confirmed from a six-row controlled export is:
 
 - 1 White → internal 0
 - 2 Green → internal 1
 - 3 Blue → internal 2
 - 4 Purple → internal 3
 - 5 Orange → internal 4
-- 6 Red → internal 5
+- 6 Red → internal 9
 
 Deck Title, Deck Description, and Tag Description remain normal Miliastra text fields, so variable-reference text such as `{1:lv.Example}` is preserved and editable.
 
-The Deck Selector settings panel exposes the verified/identified controls for title display/text, List/Grid layout, selected/reset count display, remaining-time display, pre-end warning time, single-player pause behavior, collapse/cancel behavior, and Known Deck icon/title/description visibility.
+The Deck Selector settings panel exposes the identified controls for title display/text, List/Grid layout, selected/reset count display, remaining-time display, pre-end warning time, single-player pause behavior, collapse/cancel behavior, and Known Deck icon/title/description visibility.
 
 ### Status Display Area note
 
