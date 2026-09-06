@@ -14,7 +14,7 @@ https://mypingo.github.io/Miliastra-UI-Tools/
 - **Deck Selector** — edit/build deck rows, Known/Unknown Deck type, icons, titles, descriptions, tag colors, selector display settings, layout, timing controls, and ordering.
 - **Tab** — edit/build tabs, Formal Variables, and visibility mappings.
 - **Status Display Area** — edit/build Status Items, Formal Variables, values, and Monitor Entity Variable references.
-- **Structure GIA** — edit/build verified Structure fields and list values. Imported Struct, StructList, and Dictionary fields expose identified reference/type metadata without inventing project-specific Structure definitions.
+- **Structure GIA** — edit/build verified Structure fields and confirmed list defaults. Imported Struct, StructList, and Dictionary fields expose identified reference/type metadata without inventing project-specific Structure definitions.
 
 Component-wide settings are separated from selected list/item data. Selecting a list item returns the inspector to its item-specific view, while global settings and global Formal Variable definitions remain under **Component Settings**.
 
@@ -41,23 +41,34 @@ Miliastra does not restore **Unit Status** links when a Status Display Area `.gi
 
 Monitor Entity Variable references are supported and survive import in the tested cases.
 
-### Structure reference notes
+### Structure reference and Build New rules
 
 Struct and StructList fields can reference user-created Structures by **Structure Configuration ID**. Those referenced Structures are project-specific and are not treated as universal schemas or Build New defaults.
 
-When reading a Structure GIA, the editor exposes the referenced Structure Configuration ID where it can be identified. Dictionary fields also expose identified key/value type metadata and a referenced Structure Configuration ID when the value is Struct or StructList.
+When reading a Structure GIA, the editor exposes the referenced Structure Configuration ID where it can be identified. Dictionary fields also expose identified key/value type metadata, their Dictionary type ID, and a referenced Structure Configuration ID when the value is Struct or StructList.
 
-Build New intentionally does not fabricate arbitrary nested Struct/StructList GIA definitions from a project-specific example. Support is only enabled where the required reference/schema metadata is understood well enough to generate safely.
+A Structure Configuration ID by itself is not enough to construct a nested Structure value. Existing Struct/StructList values contain the ordered value shape of the referenced custom Structure, and GIA defaults can embed the referenced Structure shape as well. Build New therefore does **not** fabricate Struct or StructList fields from only an ID.
+
+For Structure GIA Build New:
+
+- Struct and StructList are intentionally unavailable as new field types until the referenced custom Structure shape can be supplied safely.
+- Dictionary creation currently uses the validated empty **String → String** template only. Other GIA Dictionary key/value combinations carry an additional Dictionary type identifier whose general derivation is not yet confirmed.
+- Empty list fields can be created from their validated templates.
+- Populated default editing is enabled only for list encodings confirmed by controlled GIA data. `Int32List` and `BoolList` use Miliastra's packed repeated encoding; `StringList` and the previously verified `Vector3List` use their confirmed forms. Other list types remain empty-default-only until a populated controlled GIA confirms their serialization.
 
 ## Supported variable JSON workflows
 
 - Dictionary
-- Structure
-- Nested Dictionary / Structure values
-- StructList
+- Basic Structure
+- Nested Dictionary values
+- Existing Struct / StructList values when their complete custom Structure shape is present in the opened data
 - Supported scalar and list variable types
 
-JSON Struct, StructList, and Structure-valued Dictionary editors use **Structure Configuration ID** consistently. StructList item IDs and Structure-valued Dictionary entry IDs are kept synchronized with their declared Structure Configuration ID while editing newly built data.
+For JSON Build New, all self-contained scalar/list types and nested Dictionaries are configurable. Blank Struct/StructList creation is intentionally not offered because an external Structure Configuration ID does not define the required field shape.
+
+When an opened JSON already contains a Struct or StructList, its existing field values remain editable because the complete ordered value shape is known from the file. Its Structure Configuration ID, field count/order, and field types are treated as part of the referenced external schema and are not freely rewritten. Existing complete Structure values can still be duplicated or copied/pasted where the target expects the same Structure Configuration ID and shape.
+
+For a Dictionary whose value type is Struct or StructList, existing entries remain editable and duplicable. Blank **Add Entry** is disabled because it would require fabricating an unknown Structure shape; a complete compatible entry can be pasted instead.
 
 User-facing type names are normalized for readability while the original Miliastra serialization identifiers are preserved internally. Examples:
 
@@ -65,6 +76,8 @@ User-facing type names are normalized for readability while the original Miliast
 - `ConfigReference` → **Configuration ID**
 - `EntityReference` → **Prefab ID**
 - `Dict` → **Dictionary**
+
+Dictionary key types exposed by the JSON editor are String, Integer, GUID, Configuration ID, Prefab ID, Faction, and Entity, using their canonical serialized identifiers internally.
 
 ## Editing features
 
@@ -90,6 +103,7 @@ Important compatibility rules:
 - Formal Variable names use the confirmed **30-character** limit.
 - Build New templates are based on editor-created defaults rather than populated examples wherever validated empty templates are available.
 - Project-specific Structure Configuration IDs and nested Structure layouts are not reused as generic defaults.
+- Build New hides or disables shapes whose complete serialization cannot be determined from the available controlled data.
 - User-facing renamed variable types do not change Miliastra's underlying serialized type identifiers.
 
 ## Repository layout
@@ -106,12 +120,13 @@ assets/
   dictionary-key-types.js
   dictionary-structure-config.js
   structure-gia-references.js
+  data-shape-safety.js
   status-display.js
   status-v2.part1.txt … status-v2.part6.txt
   type-labels.js
 ```
 
-The production site is self-contained in this repository. `editor-core.html` is the pinned editor baseline; the remaining local scripts layer the validated component and compatibility behavior used by the site.
+The production site is self-contained in this repository. `editor-core.html` is the pinned editor baseline; the remaining local scripts layer the validated component, compatibility, reference-reading, and shape-safety behavior used by the site.
 
 ## Development policy
 
