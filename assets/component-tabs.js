@@ -60,8 +60,57 @@ function installStatusTabs(){
   });
 }
 
+function isDeckItemControl(target){
+  if(!(target instanceof Element))return false;
+  const deckInspector=document.getElementById('deckInspector');
+  if(!deckInspector?.contains(target))return false;
+  if(target.closest('[data-inspector-pane="component"]')||target.closest('#deckPageSettings'))return false;
+  return target.matches('input,textarea,select');
+}
+
+function installDeckItemListRefresh(){
+  const inspector=document.querySelector('.inspector');
+  const deckInspector=document.getElementById('deckInspector');
+  if(!inspector||!deckInspector||inspector.dataset.deckItemListRefresh==='1')return;
+  inspector.dataset.deckItemListRefresh='1';
+
+  inspector.addEventListener('change',event=>{
+    if(currentDocument?.kind!=='gia-deck'||!isDeckItemControl(event.target))return;
+    renderGia();
+  });
+
+  deckInspector.addEventListener('keydown',event=>{
+    if(
+      event.key!=='Enter' ||
+      event.isComposing ||
+      event.target instanceof HTMLTextAreaElement ||
+      !isDeckItemControl(event.target)
+    )return;
+    event.preventDefault();
+    event.stopPropagation();
+    applyGiaFields(true,true);
+  });
+}
+
+function installDeckBuildDefaults(){
+  const button=document.getElementById('newDeckButton');
+  if(!button||button.dataset.emptyTagDefault==='1')return;
+  button.dataset.emptyTagDefault='1';
+  button.addEventListener('click',()=>{
+    setTimeout(()=>{
+      if(currentDocument?.kind!=='gia-deck'||!currentDocument.items?.length)return;
+      const item=currentDocument.items[0];
+      item.tag='';
+      item.rawMessage=updateDeckEntry(item);
+      renderGia();
+    },0);
+  });
+}
+
 installStructureTabs();
 installStatusTabs();
+installDeckItemListRefresh();
+installDeckBuildDefaults();
 const observer=new MutationObserver(()=>installStatusTabs());
 observer.observe(document.body,{childList:true,subtree:true});
 })();
