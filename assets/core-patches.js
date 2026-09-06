@@ -21,15 +21,19 @@ html,body,#app{width:100%;height:100%;margin:0;background:#090d16}
 (async()=>{
   try{
     const opts={cache:'no-store'};
-    const version='20260906a';
-    const paths=['editor-core.html','core-patches.js','site.css','site.js','status-display.js','component-tabs.js'];
+    const version='20260905p';
+    const paths=[
+      'editor-core.html','core-patches.js','site.css','site.js',
+      'status-v2.js','deck-selector.js','type-labels.js'
+    ];
     const responses=await Promise.all(paths.map(path=>fetch(`./assets/${path}?v=${version}`,opts)));
     const failed=responses.findIndex(response=>!response.ok);
     if(failed>=0)throw new Error(`Failed to load ${paths[failed]}`);
-    let source=await responses[0].text();
-    const patchCode=await responses[1].text();
-    const css=await responses[2].text();
-    const scripts=[await responses[3].text(),await responses[4].text(),await responses[5].text()].join('\n');
+    const [sourceRes,patchRes,cssRes,siteRes,statusRes,deckRes,labelRes]=responses;
+    let source=await sourceRes.text();
+    const patchCode=await patchRes.text();
+    const css=await cssRes.text();
+    const scripts=[await siteRes.text(),await statusRes.text(),await deckRes.text(),await labelRes.text()].join('\n');
 
     new Function(patchCode)();
     if(typeof globalThis.patchMiliastraEditorCore!=='function')throw new Error('Editor core patcher did not initialize');

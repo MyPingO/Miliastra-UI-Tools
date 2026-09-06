@@ -16,6 +16,8 @@ https://mypingo.github.io/Miliastra-UI-Tools/
 - **Status Display Area** — edit/build Status Items, Formal Variables, values, and Monitor Entity Variable references.
 - **Structure GIA** — edit/build verified Structure fields and list values.
 
+Component-wide settings are separated from selected list/item data. Selecting a list item returns the inspector to its item-specific view, while global settings and global Formal Variable definitions remain under **Component Settings**.
+
 ### Deck Selector notes
 
 Deck Selector supports **Known Deck** and **Unknown Deck** rows. Unknown Decks do not display their custom Deck Icon in the selector, but an icon ID can still remain serialized in the file. The site therefore disables the icon field for Unknown Deck rows while preserving any existing serialized value.
@@ -31,7 +33,7 @@ Tag colors use Miliastra-specific serialized values internally while the UI uses
 
 Deck Title, Deck Description, and Tag Description remain normal Miliastra text fields, so variable-reference text such as `{1:lv.Example}` is preserved and editable.
 
-The Deck Selector settings panel exposes the identified controls for title display/text, List/Grid layout, selected/reset count display, remaining-time display, pre-end warning time, single-player pause behavior, collapse/cancel behavior, and Known Deck icon/title/description visibility.
+Component Settings expose the identified controls for title display/text, List/Grid layout, selected/reset count display, remaining-time display, pre-end warning time, single-player pause behavior, collapse/cancel behavior, and Known Deck icon/title/description visibility.
 
 ### Status Display Area note
 
@@ -64,10 +66,11 @@ User-facing type names are normalized for readability while the original Miliast
 - Duplicate, reorder, and delete
 - CSV import where supported
 - Keyboard shortcuts
+- Separate selected-item and component-settings views for supported UI components
 
 ## Compatibility and serialization
 
-The current production shell loads a pinned, known-good editor baseline and layers validated fixes and newer component support on top of it. This is intentional: binary `.gia` behavior is preserved rather than rewritten without evidence from Miliastra-created samples.
+The production shell loads a pinned editor baseline stored directly in this repository and layers validated compatibility fixes and component modules on top of it. No external runtime copy of the editor is required.
 
 Important compatibility rules:
 
@@ -83,21 +86,19 @@ Important compatibility rules:
 ```text
 index.html
 assets/
+  editor-core.html
+  core-patches.js
   icon.svg
   site.css
   site.js
+  component-tabs.js
   deck-selector.js
   status-display.js
-  status-v2.part1.txt
-  status-v2.part2.txt
-  status-v2.part3.txt
-  status-v2.part4.txt
-  status-v2.part5.txt
-  status-v2.part6.txt
+  status-v2.part1.txt … status-v2.part6.txt
   type-labels.js
 ```
 
-All files currently in the repository are used by the production site. The split Status Display files are runtime-loaded modules, not source backups or test artifacts.
+The production site is self-contained in this repository. `editor-core.html` is the pinned editor baseline and `core-patches.js` applies validated compatibility fixes before startup. `status-display.js` loads the Status Display implementation chunks and the Deck Selector/type-label enhancements from local repository assets.
 
 ## Development policy
 

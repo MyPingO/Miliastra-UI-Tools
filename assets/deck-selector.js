@@ -1,6 +1,8 @@
 (()=>{
 'use strict';
 if(typeof DeckSelectorDocument==='undefined'||typeof parseFields!=='function')return;
+if(globalThis.__miliastraDeckSelectorEnhanced)return;
+globalThis.__miliastraDeckSelectorEnhanced=true;
 
 const colorNames=['White','Green','Blue','Purple','Orange','Red'];
 const colorInternal=[0,1,2,3,4,9];
@@ -36,14 +38,14 @@ function replaceNestedLeaf(message,target,update){
   }
   return{bytes:message,changed:false};
 }
-function setVarint(message,n,value){const fs=parseFields(message),f=field(fs,n,0);return f?replaceField(message,f,Number(value)):concat(message,encodeField(n,0,Number(value)))}
-function setText(message,n,value){const fs=parseFields(message),f=field(fs,n,2);return f?replaceField(message,f,writeTextWrapper(f.value,String(value??''))):message}
+function setVarint(message,n,value){const fs=parseFields(message),f=field(fs,n,0),numeric=Number(value);if(f)return replaceField(message,f,numeric);return numeric===0?message:concat(message,encodeField(n,0,numeric))}
+function setText(message,n,value){const fs=parseFields(message),f=field(fs,n,2);return f?replaceField(message,f,new TextEncoder().encode(String(value??''))):message}
 
 function readSettings(doc){
   const general=walkFindLeaf(doc.payload,23),known=walkFindLeaf(doc.payload,24);
   const g=general?parseFields(general):[],k=known?parseFields(known):[];
   return{
-    displayTitle:!!num(g,502,0),titleText:field(g,503,2)?readTextWrapper(field(g,503,2).value):'',layout:num(g,505,0)===1?'grid':'list',
+    displayTitle:!!num(g,502,0),titleText:field(g,503,2)?new TextDecoder('utf-8',{fatal:true}).decode(field(g,503,2).value):'',layout:num(g,505,0)===1?'grid':'list',
     showSelectedQuantity:!!num(g,506,0),showResetCountLimit:!!num(g,510,0),showRemainingTime:!!num(g,514,0),preEndWarningTime:num(g,517,0),
     pauseSinglePlayer:!!num(g,518,0),controlsCollapse:!!num(g,519,0),selectionCancelable:!!num(g,520,0),
     displayDeckIcon:!!num(k,502,0),displayDeckTitle:!!num(k,503,0),displayDeckDescription:!!num(k,504,0)
@@ -65,7 +67,9 @@ DeckSelectorDocument.prototype.buildFile=function(){
   }).bytes;
   payload=replaceNestedLeaf(payload,24,msg=>{msg=setVarint(msg,502,settings.displayDeckIcon?1:0);msg=setVarint(msg,503,settings.displayDeckTitle?1:0);msg=setVarint(msg,504,settings.displayDeckDescription?1:0);return msg}).bytes;
   const header=new Uint8Array(out.slice(0,20)),view=new DataView(header.buffer);view.setUint32(0,20+payload.length,false);view.setUint32(16,payload.length,false);
-  return concat(header,payload,out.slice(-4));
+  const result=concat(header,payload,out.slice(-4));
+  if(result.length-4!==view.getUint32(0,false)||result.length-24!==view.getUint32(16,false))throw new Error('Deck Selector export size validation failed');
+  return result;
 };
 
 const originalColorLabel=deckColorLabel;
@@ -82,7 +86,9 @@ function installUi(){
     '<label class="deck-toggle"><input type="checkbox" data-ds="pauseSinglePlayer"> Pause Game on Page Open in Single-Player Mode</label><label class="deck-toggle"><input type="checkbox" data-ds="controlsCollapse"> Controls can collapse</label>'+ 
     '<label class="deck-toggle"><input type="checkbox" data-ds="selectionCancelable"> Selection can be canceled</label><label class="deck-toggle"><input type="checkbox" data-ds="displayDeckIcon"> Display Deck Icon</label>'+ 
     '<label class="deck-toggle"><input type="checkbox" data-ds="displayDeckTitle"> Display Deck Title</label><label class="deck-toggle"><input type="checkbox" data-ds="displayDeckDescription"> Display Deck Description</label></div>';
-  inspector.insertBefore(panel,inspector.children[1]||null);
+  const componentPane=inspector.querySelector('[data-inspector-pane="component"]');
+  if(componentPane)componentPane.append(panel);
+  else inspector.insertBefore(panel,inspector.children[1]||null);
   panel.querySelectorAll('[data-ds]').forEach(control=>{const key=control.dataset.ds;const commit=()=>{if(currentDocument?.kind!=='gia-deck')return;const s=ensureSettings(currentDocument);s[key]=control.type==='checkbox'?control.checked:(control.type==='number'?Math.max(0,Math.trunc(Number(control.value)||0)):control.value)};control.addEventListener('input',commit);control.addEventListener('change',commit)});
 
   const oldType=document.getElementById('deckType'),oldColor=document.getElementById('deckTagCode');
