@@ -14,7 +14,7 @@ https://mypingo.github.io/Miliastra-UI-Tools/
 - **Deck Selector** — edit/build deck rows, Known/Unknown Deck type, icons, titles, descriptions, tag colors, selector display settings, layout, timing controls, and ordering.
 - **Tab** — edit/build tabs, Formal Variables, and visibility mappings.
 - **Status Display Area** — edit/build Status Items, Formal Variables, values, and Monitor Entity Variable references.
-- **Structure GIA** — edit/build verified Structure fields and list values.
+- **Structure GIA** — edit/build verified Structure fields and list values. Imported Struct, StructList, and Dictionary fields expose identified reference/type metadata without inventing project-specific Structure definitions.
 
 Component-wide settings are separated from selected list/item data. Selecting a list item returns the inspector to its item-specific view, while global settings and global Formal Variable definitions remain under **Component Settings**.
 
@@ -41,6 +41,14 @@ Miliastra does not restore **Unit Status** links when a Status Display Area `.gi
 
 Monitor Entity Variable references are supported and survive import in the tested cases.
 
+### Structure reference notes
+
+Struct and StructList fields can reference user-created Structures by **Structure Configuration ID**. Those referenced Structures are project-specific and are not treated as universal schemas or Build New defaults.
+
+When reading a Structure GIA, the editor exposes the referenced Structure Configuration ID where it can be identified. Dictionary fields also expose identified key/value type metadata and a referenced Structure Configuration ID when the value is Struct or StructList.
+
+Build New intentionally does not fabricate arbitrary nested Struct/StructList GIA definitions from a project-specific example. Support is only enabled where the required reference/schema metadata is understood well enough to generate safely.
+
 ## Supported variable JSON workflows
 
 - Dictionary
@@ -48,6 +56,8 @@ Monitor Entity Variable references are supported and survive import in the teste
 - Nested Dictionary / Structure values
 - StructList
 - Supported scalar and list variable types
+
+JSON Struct, StructList, and Structure-valued Dictionary editors use **Structure Configuration ID** consistently. StructList item IDs and Structure-valued Dictionary entry IDs are kept synchronized with their declared Structure Configuration ID while editing newly built data.
 
 User-facing type names are normalized for readability while the original Miliastra serialization identifiers are preserved internally. Examples:
 
@@ -70,7 +80,7 @@ User-facing type names are normalized for readability while the original Miliast
 
 ## Compatibility and serialization
 
-The production shell loads a pinned editor baseline stored directly in this repository and layers validated compatibility fixes and component modules on top of it. No external runtime copy of the editor is required.
+The production shell loads a pinned editor baseline stored directly in this repository and layers validated compatibility/component modules on top of it. No external runtime copy of the editor is required.
 
 Important compatibility rules:
 
@@ -79,6 +89,7 @@ Important compatibility rules:
 - Existing unknown fields are preserved instead of being discarded.
 - Formal Variable names use the confirmed **30-character** limit.
 - Build New templates are based on editor-created defaults rather than populated examples wherever validated empty templates are available.
+- Project-specific Structure Configuration IDs and nested Structure layouts are not reused as generic defaults.
 - User-facing renamed variable types do not change Miliastra's underlying serialized type identifiers.
 
 ## Repository layout
@@ -87,18 +98,20 @@ Important compatibility rules:
 index.html
 assets/
   editor-core.html
-  core-patches.js
   icon.svg
   site.css
   site.js
   component-tabs.js
   deck-selector.js
+  dictionary-key-types.js
+  dictionary-structure-config.js
+  structure-gia-references.js
   status-display.js
   status-v2.part1.txt … status-v2.part6.txt
   type-labels.js
 ```
 
-The production site is self-contained in this repository. `editor-core.html` is the pinned editor baseline and `core-patches.js` applies validated compatibility fixes before startup. `status-display.js` loads the Status Display implementation chunks and the Deck Selector/type-label enhancements from local repository assets.
+The production site is self-contained in this repository. `editor-core.html` is the pinned editor baseline; the remaining local scripts layer the validated component and compatibility behavior used by the site.
 
 ## Development policy
 
