@@ -1,0 +1,67 @@
+(()=>{
+'use strict';
+
+function installStructureTabs(){
+  if(typeof globalThis.installMiliastraInspectorTabs!=='function')return;
+  const structure=globalThis.installMiliastraInspectorTabs('structureInspector','Structure Field','Component Settings');
+  if(!structure)return;
+  const name=document.getElementById('structureName')?.closest('.field');
+  const id=document.getElementById('structureId')?.closest('.field');
+  const hr=structure.children.find(node=>node.tagName==='HR');
+  structure.children.filter(node=>node!==name&&node!==id&&node!==hr).forEach(node=>structure.itemPane.append(node));
+  if(name)structure.componentPane.append(name);
+  if(id)structure.componentPane.append(id);
+  document.getElementById('structureBody')?.addEventListener('click',()=>structure.activate('item'));
+}
+
+function installStatusTabs(){
+  const overlay=document.querySelector('.sd-overlay');
+  const wrap=overlay?.querySelector('.sd-wrap');
+  if(!overlay||!wrap||wrap.querySelector('.sd-tabs'))return;
+  const formalSection=overlay.querySelector('[data-formals]')?.closest('.sd-section');
+  const itemSection=overlay.querySelector('[data-items]')?.closest('.sd-section');
+  const monitorSection=overlay.querySelector('[data-monitor-scope]')?.closest('.sd-section');
+  if(!formalSection||!itemSection)return;
+
+  overlay.querySelector('[data-monitor-name]')?.removeAttribute('maxlength');
+
+  const styleId='componentTabStatusStyle';
+  if(!document.getElementById(styleId)){
+    const style=document.createElement('style');
+    style.id=styleId;
+    style.textContent='.sd-tabs{display:flex;gap:6px;margin:0 0 16px;padding-bottom:10px;border-bottom:1px solid #293950}.sd-tabs button{flex:1;color:#8fa3bd;background:#101827}.sd-tabs button.active{color:#eef6ff;background:#1b2d48;border-color:#42648f}.sd-wrap>.hidden{display:none!important}';
+    document.head.append(style);
+  }
+
+  const tabs=document.createElement('div');
+  tabs.className='sd-tabs';
+  tabs.innerHTML='<button type="button" class="active" data-sd-tab="items">Status Items</button><button type="button" data-sd-tab="component">Component Settings</button>';
+  const itemPane=document.createElement('div');
+  itemPane.dataset.sdPane='items';
+  const componentPane=document.createElement('div');
+  componentPane.dataset.sdPane='component';
+  componentPane.className='hidden';
+  wrap.prepend(tabs,itemPane,componentPane);
+  itemPane.append(itemSection);
+  if(monitorSection)componentPane.append(monitorSection);
+  componentPane.append(formalSection);
+
+  const activate=kind=>{
+    tabs.querySelectorAll('[data-sd-tab]').forEach(button=>button.classList.toggle('active',button.dataset.sdTab===kind));
+    itemPane.classList.toggle('hidden',kind!=='items');
+    componentPane.classList.toggle('hidden',kind!=='component');
+  };
+  tabs.addEventListener('click',event=>{
+    const button=event.target.closest('[data-sd-tab]');
+    if(button)activate(button.dataset.sdTab);
+  });
+  itemPane.addEventListener('click',event=>{
+    if(event.target.closest('.sd-card'))activate('items');
+  });
+}
+
+installStructureTabs();
+installStatusTabs();
+const observer=new MutationObserver(()=>installStatusTabs());
+observer.observe(document.body,{childList:true,subtree:true});
+})();
