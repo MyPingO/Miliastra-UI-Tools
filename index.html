@@ -21,7 +21,7 @@ html,body,#app{width:100%;height:100%;margin:0;background:#090d16}
 (async()=>{
   try{
     const opts={cache:'no-store'};
-    const version='20260906p';
+    const version='20260906q';
     const sourceRes=await fetch('./assets/editor-core.html?v='+version,opts);
     const cssRes=await fetch('./assets/site.css?v='+version,opts);
     const siteRes=await fetch('./assets/site.js?v='+version,opts);
@@ -34,6 +34,7 @@ html,body,#app{width:100%;height:100%;margin:0;background:#090d16}
     const valueEditorsRes=await fetch('./assets/value-editors.js?v='+version,opts);
     const structureGiaBuildTypesRes=await fetch('./assets/structure-gia-build-types.js?v='+version,opts);
     const giaDictionariesRes=await fetch('./assets/gia-dictionaries.js?v='+version,opts);
+    const dictionaryNoNestingRes=await fetch('./assets/dictionary-no-nesting.js?v='+version,opts);
     if(!sourceRes.ok)throw new Error('Failed to load editor-core.html');
     if(!cssRes.ok)throw new Error('Failed to load site.css');
     if(!siteRes.ok)throw new Error('Failed to load site.js');
@@ -46,6 +47,7 @@ html,body,#app{width:100%;height:100%;margin:0;background:#090d16}
     if(!valueEditorsRes.ok)throw new Error('Failed to load value-editors.js');
     if(!structureGiaBuildTypesRes.ok)throw new Error('Failed to load structure-gia-build-types.js');
     if(!giaDictionariesRes.ok)throw new Error('Failed to load gia-dictionaries.js');
+    if(!dictionaryNoNestingRes.ok)throw new Error('Failed to load dictionary-no-nesting.js');
 
     let source=await sourceRes.text();
     const css=await cssRes.text();
@@ -59,7 +61,8 @@ html,body,#app{width:100%;height:100%;margin:0;background:#090d16}
       await dataShapeSafetyRes.text(),
       await valueEditorsRes.text(),
       await structureGiaBuildTypesRes.text(),
-      await giaDictionariesRes.text()
+      await giaDictionariesRes.text(),
+      await dictionaryNoNestingRes.text()
     ].join('\n');
 
     source=source.replace('</style>','\n'+css+'\n</style>');
