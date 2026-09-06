@@ -126,7 +126,7 @@ function ensureReferencePanel(){
   panel.id='structureReferenceMetadataPanel';
   panel.className='meta hidden';
   const help=document.getElementById('structureGiaHelp');
-  if(help)inspector.insertBefore(panel,help);
+  if(help?.parentNode)help.parentNode.insertBefore(panel,help);
   else inspector.appendChild(panel);
   return panel;
 }
