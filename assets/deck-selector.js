@@ -16,7 +16,7 @@ function walkFindLeaf(message,target){
     if(f.number===target&&f.wireType===2){
       try{
         const inner=parseFields(f.value);
-        if(target===23&&field(inner,502,0)&&field(inner,503,2))return f.value;
+        if(target===23&&field(inner,503,2))return f.value;
         if(target===24&&field(inner,502,0)&&field(inner,503,0)&&field(inner,504,0))return f.value;
       }catch{}
     }
@@ -30,7 +30,7 @@ function replaceNestedLeaf(message,target,update){
     if(f.number===target&&f.wireType===2){
       try{
         const inner=parseFields(f.value);
-        const match=target===23?(field(inner,502,0)&&field(inner,503,2)):(field(inner,502,0)&&field(inner,503,0)&&field(inner,504,0));
+        const match=target===23?field(inner,503,2):(field(inner,502,0)&&field(inner,503,0)&&field(inner,504,0));
         if(match)return{bytes:replaceField(message,f,update(f.value)),changed:true};
       }catch{}
     }
@@ -45,8 +45,8 @@ function readSettings(doc){
   const general=walkFindLeaf(doc.payload,23),known=walkFindLeaf(doc.payload,24);
   const g=general?parseFields(general):[],k=known?parseFields(known):[];
   return{
-    displayTitle:!!num(g,502,0),titleText:field(g,503,2)?new TextDecoder('utf-8',{fatal:true}).decode(field(g,503,2).value):'',layout:num(g,505,0)===1?'grid':'list',
-    showSelectedQuantity:!!num(g,506,0),showResetCountLimit:!!num(g,510,0),showRemainingTime:!!num(g,514,0),preEndWarningTime:num(g,517,0),
+    displayTitle:!!num(g,502,0),titleText:field(g,503,2)?new TextDecoder('utf-8',{fatal:true}).decode(field(g,503,2).value):'',layout:num(g,504,0)===1?'grid':'list',
+    showSelectedQuantity:!!num(g,506,0),showResetCountLimit:!!num(g,510,0),showRemainingTime:!!num(g,516,0),preEndWarningTime:num(g,517,0),
     pauseSinglePlayer:!!num(g,518,0),controlsCollapse:!!num(g,519,0),selectionCancelable:!!num(g,520,0),
     displayDeckIcon:!!num(k,502,0),displayDeckTitle:!!num(k,503,0),displayDeckDescription:!!num(k,504,0)
   };
@@ -60,8 +60,8 @@ DeckSelectorDocument.prototype.buildFile=function(){
   const settings=ensureSettings(this);
   let out=originalBuild.call(this),payload=out.slice(20,-4);
   payload=replaceNestedLeaf(payload,23,msg=>{
-    msg=setVarint(msg,502,settings.displayTitle?1:0);msg=setText(msg,503,settings.titleText);msg=setVarint(msg,505,settings.layout==='grid'?1:0);
-    msg=setVarint(msg,506,settings.showSelectedQuantity?1:0);msg=setVarint(msg,510,settings.showResetCountLimit?1:0);msg=setVarint(msg,514,settings.showRemainingTime?1:0);
+    msg=setVarint(msg,502,settings.displayTitle?1:0);msg=setText(msg,503,settings.titleText);msg=setVarint(msg,504,settings.layout==='grid'?1:0);
+    msg=setVarint(msg,506,settings.showSelectedQuantity?1:0);msg=setVarint(msg,510,settings.showResetCountLimit?1:0);msg=setVarint(msg,516,settings.showRemainingTime?1:0);
     msg=setVarint(msg,517,Math.max(0,Math.trunc(Number(settings.preEndWarningTime)||0)));msg=setVarint(msg,518,settings.pauseSinglePlayer?1:0);
     msg=setVarint(msg,519,settings.controlsCollapse?1:0);msg=setVarint(msg,520,settings.selectionCancelable?1:0);return msg;
   }).bytes;
