@@ -1,10 +1,8 @@
 (()=>{
 'use strict';
 
-/* JSON list values are self-contained arrays. The supplied Structure JSON
-   confirms populated Int32List, BoolList, and StringList values, while the
-   editor's verified JSON schema defines the remaining primitive list wrappers.
-   All primitive/list entries stay in their canonical string representation. */
+/* JSON primitive lists are self-contained arrays. They do not depend on an
+   external Structure definition, so Build New can edit their items directly. */
 if(!LIST_TYPES.includes('GuidList'))LIST_TYPES.splice(1,0,'GuidList');
 if(!PRIMITIVE_TYPES.includes('GuidList'))PRIMITIVE_TYPES.push('GuidList');
 if(!VALUE_TYPES.includes('GuidList')){
@@ -108,8 +106,8 @@ function jsonListItemControl(type,value,onCommit){
   return control;
 }
 
-if(typeof primitiveControl==='function'&&!globalThis.__miliastraJsonListItemEditor){
-  globalThis.__miliastraJsonListItemEditor=true;
+if(typeof primitiveControl==='function'&&!globalThis.__miliastraJsonListItemEditorV2){
+  globalThis.__miliastraJsonListItemEditorV2=true;
   const previousPrimitiveControl=primitiveControl;
   primitiveControl=function(wrapper){
     const type=wrapper?.param_type;
@@ -135,28 +133,28 @@ if(typeof primitiveControl==='function'&&!globalThis.__miliastraJsonListItemEdit
       const actions=document.createElement('div');
       actions.className='structure-list-actions';
       const up=document.createElement('button');
-      up.className='small'; up.textContent='↑'; up.disabled=index===0;
+      up.className='small';up.textContent='↑';up.disabled=index===0;
       up.addEventListener('click',()=>{
         pushHistory(`Move ${type} item`);
         [wrapper.value[index-1],wrapper.value[index]]=[wrapper.value[index],wrapper.value[index-1]];
         renderJson();
       });
       const down=document.createElement('button');
-      down.className='small'; down.textContent='↓'; down.disabled=index===wrapper.value.length-1;
+      down.className='small';down.textContent='↓';down.disabled=index===wrapper.value.length-1;
       down.addEventListener('click',()=>{
         pushHistory(`Move ${type} item`);
         [wrapper.value[index],wrapper.value[index+1]]=[wrapper.value[index+1],wrapper.value[index]];
         renderJson();
       });
       const duplicate=document.createElement('button');
-      duplicate.className='small'; duplicate.textContent='⧉'; duplicate.title='Duplicate item';
+      duplicate.className='small';duplicate.textContent='⧉';duplicate.title='Duplicate item';
       duplicate.addEventListener('click',()=>{
         pushHistory(`Duplicate ${type} item`);
         wrapper.value.splice(index+1,0,deepCloneData(wrapper.value[index]));
         renderJson();
       });
       const remove=document.createElement('button');
-      remove.className='small danger'; remove.textContent='×'; remove.title='Delete item';
+      remove.className='small danger';remove.textContent='×';remove.title='Delete item';
       remove.addEventListener('click',()=>{
         pushHistory(`Delete ${type} item`);
         wrapper.value.splice(index,1);
@@ -190,11 +188,16 @@ if(typeof primitiveControl==='function'&&!globalThis.__miliastraJsonListItemEdit
   };
 }
 
-/* Structure GIA Build New: expose only types whose complete editable default
-   encoding is confirmed. Other types remain readable when opening existing
-   files, but are not offered as half-supported Build New options. */
+/* Structure GIA Build New. Keep this patch deliberately small: core remains
+   responsible for normal button/input handlers. We only provide editable
+   defaults and constrain the type picker to shapes whose defaults we can
+   serialize completely. */
 const editableGiaScalarTypes=new Set([3,4,5,6,12,20,21]);
-const fullyEditableGiaBuildTypes=new Set([6,11,3,8,5,4,9,12,15,20,21]);
+const editableGiaListTypes=new Set([8,9,11,15]);
+const fullyEditableGiaBuildTypes=new Set([
+  ...editableGiaScalarTypes,
+  ...editableGiaListTypes
+]);
 
 function defaultGiaScalarValue(typeCode){
   const type=Number(typeCode);
@@ -244,16 +247,17 @@ function parseGiaScalarValue(typeCode,raw){
   return String(raw??'');
 }
 
-function ensureGiaScalarState(item){
+function recoverGiaScalarValue(item){
   if(!item||!editableGiaScalarTypes.has(Number(item.typeCode)))return;
-  if(Number(item.scalarValueTypeCode)!==Number(item.typeCode)){
-    item.scalarValueTypeCode=Number(item.typeCode);
-    item.scalarValue=defaultGiaScalarValue(item.typeCode);
+  const type=Number(item.typeCode);
+  if(Number(item.scalarValueTypeCode)===type&&item.scalarValue!==undefined)return;
+  let candidate=defaultGiaScalarValue(type);
+  if(item.defaultValue!==undefined&&item.defaultValue!==null){
+    try{candidate=parseGiaScalarValue(type,item.defaultValue);}catch{}
   }
-  if(item.scalarValue===undefined||item.scalarValue===null){
-    item.scalarValue=defaultGiaScalarValue(item.typeCode);
-  }
-  item.defaultValue=String(item.scalarValue);
+  item.scalarValueTypeCode=type;
+  item.scalarValue=candidate;
+  item.defaultValue=String(candidate);
 }
 
 function float32Bytes(value){
@@ -284,12 +288,11 @@ function giaScalarTypedPayload(typeCode,value){
   if(type===12){
     const [x,y,z]=parsed.split(',').map(Number);
     if(x===0&&y===0&&z===0)return encodeField(1,2,new Uint8Array());
-    const vector=concatBytes(
+    return encodeField(1,2,concatBytes(
       encodeField(1,5,float32Bytes(x)),
       encodeField(2,5,float32Bytes(y)),
       encodeField(3,5,float32Bytes(z))
-    );
-    return encodeField(1,2,vector);
+    ));
   }
   if(type===20||type===21){
     const id=BigInt(parsed);
@@ -313,8 +316,17 @@ function patchGiaScalarDefault(fieldMessage,typeCode,value){
   return replaceField(fieldMessage,defaultWrapper,patchedDefault);
 }
 
-if(typeof patchStructureFieldTemplate==='function'&&!globalThis.__miliastraGiaScalarDefaultBuilder){
-  globalThis.__miliastraGiaScalarDefaultBuilder=true;
+if(typeof structureGiaBuildTypeOptions==='function'&&!globalThis.__miliastraEditableGiaTypeOptionsV2){
+  globalThis.__miliastraEditableGiaTypeOptionsV2=true;
+  const previousStructureGiaBuildTypeOptions=structureGiaBuildTypeOptions;
+  structureGiaBuildTypeOptions=function(){
+    return previousStructureGiaBuildTypeOptions()
+      .filter(option=>fullyEditableGiaBuildTypes.has(Number(option.typeCode)));
+  };
+}
+
+if(typeof patchStructureFieldTemplate==='function'&&!globalThis.__miliastraGiaScalarDefaultBuilderV2){
+  globalThis.__miliastraGiaScalarDefaultBuilderV2=true;
   const previousPatchStructureFieldTemplate=patchStructureFieldTemplate;
   patchStructureFieldTemplate=function(typeCode,fieldName,fieldIndex,listValues=[]){
     let message=previousPatchStructureFieldTemplate(typeCode,fieldName,fieldIndex,listValues);
@@ -322,69 +334,88 @@ if(typeof patchStructureFieldTemplate==='function'&&!globalThis.__miliastraGiaSc
       ?currentDocument.items?.[Number(fieldIndex)-1]
       :null;
     if(item&&editableGiaScalarTypes.has(Number(typeCode))){
-      ensureGiaScalarState(item);
+      recoverGiaScalarValue(item);
       message=patchGiaScalarDefault(message,typeCode,item.scalarValue);
     }
     return message;
   };
 }
 
-if(typeof StructureGiaDocument==='function'&&!globalThis.__miliastraGiaScalarNormalize){
-  globalThis.__miliastraGiaScalarNormalize=true;
+if(typeof StructureGiaDocument==='function'&&!globalThis.__miliastraGiaScalarNormalizeV2){
+  globalThis.__miliastraGiaScalarNormalizeV2=true;
   const previousNormalize=StructureGiaDocument.prototype.normalize;
   StructureGiaDocument.prototype.normalize=function(){
     const result=previousNormalize.call(this);
     if(this.structureBuildMode){
-      this.items.forEach(item=>ensureGiaScalarState(item));
+      this.items.forEach(item=>{
+        if(editableGiaScalarTypes.has(Number(item.typeCode))){
+          recoverGiaScalarValue(item);
+          item.defaultValue=String(item.scalarValue);
+        }
+      });
     }
     return result;
   };
 }
 
-function filterGiaBuildTypeOptions(){
+function syncStructureBuilderInteractivity(){
   if(currentDocument?.kind!=='gia-structure'||!currentDocument.structureBuildMode)return;
-  const select=elements.structureFieldType;
-  if(!select)return;
-  [...select.options].forEach(option=>{
-    if(!fullyEditableGiaBuildTypes.has(Number(option.value)))option.remove();
-  });
-}
+  const hasSelection=selectedIndex!==null&&Boolean(currentDocument.items?.[selectedIndex]);
+  const item=hasSelection?currentDocument.items[selectedIndex]:null;
+  const type=Number(item?.typeCode);
 
-function configureGiaScalarEditor(){
-  if(currentDocument?.kind!=='gia-structure'||selectedIndex===null)return;
-  const item=currentDocument.items?.[selectedIndex];
+  if(elements.structureName)elements.structureName.disabled=false;
+  if(elements.structureId)elements.structureId.disabled=false;
+  if(elements.generateStructureIdButton)elements.generateStructureIdButton.disabled=false;
+  if(elements.structureFieldName)elements.structureFieldName.disabled=!hasSelection;
+  if(elements.structureFieldType)elements.structureFieldType.disabled=!hasSelection;
+
+  if(elements.addButton)elements.addButton.disabled=false;
+  if(elements.pasteButton)elements.pasteButton.disabled=false;
+  if(elements.batchDeleteButton)elements.batchDeleteButton.disabled=false;
+  if(elements.duplicateButton)elements.duplicateButton.disabled=!hasSelection;
+  if(elements.copyButton)elements.copyButton.disabled=!hasSelection;
+  if(elements.deleteButton)elements.deleteButton.disabled=!hasSelection;
+  if(elements.upButton)elements.upButton.disabled=!hasSelection||selectedIndex===0;
+  if(elements.downButton)elements.downButton.disabled=!hasSelection||selectedIndex===currentDocument.items.length-1;
+
+  const inspector=document.getElementById('structureInspector');
+  if(inspector)inspector.style.pointerEvents='auto';
+
   if(!item)return;
-  if(!currentDocument.structureBuildMode)return;
 
-  filterGiaBuildTypeOptions();
-  if(editableGiaScalarTypes.has(Number(item.typeCode))){
-    ensureGiaScalarState(item);
-    elements.structureScalarDefaultField.classList.remove('hidden');
-    elements.structureListDefaultPanel.classList.add('hidden');
-    elements.structureFieldDefault.disabled=false;
-    elements.structureFieldDefault.readOnly=false;
-    elements.structureFieldDefault.value=String(item.scalarValue);
-    elements.structureFieldDefault.placeholder=Number(item.typeCode)===12?'0,0,0':'';
-    elements.structureFieldDefault.inputMode=[3,20,21].includes(Number(item.typeCode))?'numeric':Number(item.typeCode)===5?'decimal':'text';
-  }else if(fullyEditableGiaBuildTypes.has(Number(item.typeCode))){
-    elements.structureFieldDefault.disabled=true;
+  if(editableGiaScalarTypes.has(type)){
+    recoverGiaScalarValue(item);
+    elements.structureScalarDefaultField?.classList.remove('hidden');
+    elements.structureListDefaultPanel?.classList.add('hidden');
+    if(elements.structureFieldDefault){
+      elements.structureFieldDefault.disabled=false;
+      elements.structureFieldDefault.readOnly=false;
+      elements.structureFieldDefault.value=String(item.scalarValue);
+      elements.structureFieldDefault.placeholder=type===12?'0,0,0':'';
+      elements.structureFieldDefault.inputMode=[3,20,21].includes(type)?'numeric':type===5?'decimal':'text';
+    }
+  }else if(editableGiaListTypes.has(type)){
+    elements.structureScalarDefaultField?.classList.add('hidden');
+    elements.structureListDefaultPanel?.classList.remove('hidden');
+    if(elements.structureListAddButton)elements.structureListAddButton.disabled=false;
   }
 }
 
-if(typeof renderGia==='function'&&!globalThis.__miliastraGiaValueRender){
-  globalThis.__miliastraGiaValueRender=true;
+if(typeof renderGia==='function'&&!globalThis.__miliastraGiaInteractivityRenderV2){
+  globalThis.__miliastraGiaInteractivityRenderV2=true;
   const previousRenderGia=renderGia;
   renderGia=function(...args){
     const result=previousRenderGia(...args);
-    configureGiaScalarEditor();
-    if(currentDocument?.kind==='gia-structure'&&currentDocument.structureBuildMode){
+    syncStructureBuilderInteractivity();
+    if(currentDocument?.kind==='gia-structure'&&currentDocument.structureBuildMode&&selectedIndex!==null){
       const item=currentDocument.items?.[selectedIndex];
       if(item){
         const type=Number(item.typeCode);
         if(editableGiaScalarTypes.has(type)){
-          elements.structureGiaHelp.textContent='Build mode: edit the field name, type, and default value directly. Struct/StructList and other types whose full default shape is not known are not offered for Build New.';
-        }else if([8,9,11,15].includes(type)){
-          elements.structureGiaHelp.textContent='Build mode: use + Add Item and the row controls to edit this list default. The list encoding is confirmed for this type.';
+          elements.structureGiaHelp.textContent='Build mode: field name, type, and default value are editable. Changes apply automatically.';
+        }else if(editableGiaListTypes.has(type)){
+          elements.structureGiaHelp.textContent='Build mode: use + Add Item and the row controls to edit this list default.';
         }
       }
     }
@@ -392,12 +423,12 @@ if(typeof renderGia==='function'&&!globalThis.__miliastraGiaValueRender){
   };
 }
 
-let giaScalarFocusState=null;
-if(elements.structureFieldDefault&&!elements.structureFieldDefault.dataset.editableGiaScalarDefault){
-  elements.structureFieldDefault.dataset.editableGiaScalarDefault='1';
+let scalarFocusState=null;
+if(elements.structureFieldDefault&&!elements.structureFieldDefault.dataset.editableGiaScalarDefaultV2){
+  elements.structureFieldDefault.dataset.editableGiaScalarDefaultV2='1';
   elements.structureFieldDefault.addEventListener('focus',()=>{
-    if(currentDocument?.kind==='gia-structure'&&currentDocument.structureBuildMode){
-      giaScalarFocusState=captureHistoryState();
+    if(currentDocument?.kind==='gia-structure'&&currentDocument.structureBuildMode&&selectedIndex!==null){
+      scalarFocusState=captureHistoryState();
     }
   });
   elements.structureFieldDefault.addEventListener('change',()=>{
@@ -407,7 +438,7 @@ if(elements.structureFieldDefault&&!elements.structureFieldDefault.dataset.edita
     try{
       const parsed=parseGiaScalarValue(item.typeCode,elements.structureFieldDefault.value);
       const changed=String(item.scalarValue??'')!==String(parsed);
-      if(changed&&giaScalarFocusState)pushHistory('Edit Structure default value',giaScalarFocusState);
+      if(changed&&scalarFocusState)pushHistory('Edit Structure default value',scalarFocusState);
       item.scalarValueTypeCode=Number(item.typeCode);
       item.scalarValue=parsed;
       item.defaultValue=String(parsed);
@@ -416,11 +447,11 @@ if(elements.structureFieldDefault&&!elements.structureFieldDefault.dataset.edita
       setStatus('Structure default value updated.','success');
     }catch(error){
       alert(error.message||String(error));
-      ensureGiaScalarState(item);
+      recoverGiaScalarValue(item);
       elements.structureFieldDefault.value=String(item.scalarValue);
       setStatus(error.message||String(error),'error');
     }finally{
-      giaScalarFocusState=null;
+      scalarFocusState=null;
     }
   });
   elements.structureFieldDefault.addEventListener('keydown',event=>{
@@ -431,83 +462,19 @@ if(elements.structureFieldDefault&&!elements.structureFieldDefault.dataset.edita
   });
 }
 
-/* Preserve editable defaults when duplicating/copying/pasting Structure fields. */
-if(elements.duplicateButton&&!elements.duplicateButton.dataset.giaValueDuplicate){
-  elements.duplicateButton.dataset.giaValueDuplicate='1';
-  elements.duplicateButton.addEventListener('click',event=>{
-    if(currentDocument?.kind!=='gia-structure'||!currentDocument.structureBuildMode||selectedIndex===null)return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    if(!applyGiaFields(false,false))return;
-    pushHistory('Duplicate Structure field');
-    const source=currentDocument.items[selectedIndex];
-    const copy=deepCloneData(source);
-    copy.name=variableCopyName(source.name||'Field');
-    copy.originalName=copy.name;
-    currentDocument.items.splice(selectedIndex+1,0,copy);
-    currentDocument.normalize();
-    selectedIndex+=1;
-    renderGia();
-    updateMeta();
-    setStatus('Duplicated Structure field.','success');
-  },true);
+const newStructureButton=document.getElementById('newStructureGiaButton');
+if(newStructureButton&&!newStructureButton.dataset.structureInteractivityRepairV2){
+  newStructureButton.dataset.structureInteractivityRepairV2='1';
+  newStructureButton.addEventListener('click',()=>{
+    setTimeout(()=>{
+      if(currentDocument?.kind!=='gia-structure')return;
+      currentDocument.structureBuildMode=true;
+      currentDocument.normalize();
+      renderGia();
+      syncStructureBuilderInteractivity();
+    },0);
+  });
 }
 
-if(elements.copyButton&&!elements.copyButton.dataset.giaValueCopy){
-  elements.copyButton.dataset.giaValueCopy='1';
-  elements.copyButton.addEventListener('click',event=>{
-    if(currentDocument?.kind!=='gia-structure'||!currentDocument.structureBuildMode||selectedIndex===null)return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    const source=currentDocument.items[selectedIndex];
-    copyEditorFragment('gia-structure-field',{
-      name:source.name,
-      typeCode:source.typeCode,
-      listValues:deepCloneData(source.listValues||[]),
-      scalarValue:source.scalarValue,
-      scalarValueTypeCode:source.scalarValueTypeCode
-    },'Structure field');
-  },true);
-}
-
-if(elements.pasteButton&&!elements.pasteButton.dataset.giaValuePaste){
-  elements.pasteButton.dataset.giaValuePaste='1';
-  elements.pasteButton.addEventListener('click',async event=>{
-    if(currentDocument?.kind!=='gia-structure'||!currentDocument.structureBuildMode)return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    const fragment=await readEditorFragment();
-    if(!fragment||fragment.kind!=='gia-structure-field'){
-      alert('Clipboard does not contain a Structure field.');
-      return;
-    }
-    const typeCode=Number(fragment.data?.typeCode);
-    if(!fullyEditableGiaBuildTypes.has(typeCode)){
-      alert('That copied field type is readable, but is not fully supported for Build New yet.');
-      return;
-    }
-    const insertAt=selectedIndex===null?currentDocument.items.length:selectedIndex+1;
-    const item={
-      index:insertAt+1,
-      name:variableCopyName(fragment.data.name||'Pasted Field'),
-      originalName:'',
-      typeCode,
-      typeName:structureGiaTypeName(typeCode),
-      listValues:deepCloneData(fragment.data.listValues||[]),
-      scalarValue:fragment.data.scalarValue,
-      scalarValueTypeCode:fragment.data.scalarValueTypeCode,
-      defaultValue:''
-    };
-    item.originalName=item.name;
-    ensureGiaScalarState(item);
-    pushHistory('Paste Structure field');
-    currentDocument.items.splice(insertAt,0,item);
-    currentDocument.normalize();
-    selectedIndex=insertAt;
-    renderGia();
-    updateMeta();
-    setStatus('Pasted Structure field.','success');
-  },true);
-}
-
+syncStructureBuilderInteractivity();
 })();
