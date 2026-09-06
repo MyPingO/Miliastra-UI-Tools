@@ -13,7 +13,9 @@ function findFieldByLabel(root,labelText){
 function renameStructureConfigurationField(field){
   if(!field)return;
   const label=field.querySelector(':scope > label');
-  if(label)label.textContent='Structure Configuration ID';
+  if(label&&label.textContent.trim()!=='Structure Configuration ID'){
+    label.textContent='Structure Configuration ID';
+  }
 }
 
 function configureDictionaryBuilderStructureId(){
