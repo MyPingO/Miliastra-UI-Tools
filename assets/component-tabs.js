@@ -1,6 +1,28 @@
 (()=>{
 'use strict';
 
+/* Miliastra may serialize an empty text value as a zero-length field instead
+   of a nested field-501 text wrapper. The base helper assumed the wrapper
+   always existed, which caused otherwise-valid Deck Selector files with blank
+   text fields to be rejected during detection. Keep normal wrapper behavior
+   unchanged and only handle the zero-length representation explicitly. */
+if(typeof readTextWrapper==='function'&&typeof writeTextWrapper==='function'){
+  const originalReadTextWrapper=readTextWrapper;
+  const originalWriteTextWrapper=writeTextWrapper;
+  readTextWrapper=function(wrapperBytes){
+    if(wrapperBytes instanceof Uint8Array&&wrapperBytes.length===0)return '';
+    return originalReadTextWrapper(wrapperBytes);
+  };
+  writeTextWrapper=function(wrapperBytes,text){
+    const normalizedText=String(text??'');
+    if(wrapperBytes instanceof Uint8Array&&wrapperBytes.length===0){
+      if(normalizedText==='')return wrapperBytes;
+      return encodeField(501,2,new TextEncoder().encode(normalizedText));
+    }
+    return originalWriteTextWrapper(wrapperBytes,normalizedText);
+  };
+}
+
 function installStructureTabs(){
   if(typeof globalThis.installMiliastraInspectorTabs!=='function')return;
   const structure=globalThis.installMiliastraInspectorTabs('structureInspector','Structure Field','Component Settings');
