@@ -1,0 +1,6 @@
+dist/
+node_modules/
+*.tar.gz
+*.gil
+*.gia
+test-results/

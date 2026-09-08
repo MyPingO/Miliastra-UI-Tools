@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1020">
+<meta name="description" content="Fast, local-only editor and builder for Miliastra UI component GIA and variable export files.">
+<link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+<title>Miliastra UI Tools · Data Editor</title>
+<style>
+html,body,#app{width:100%;height:100%;margin:0;background:#090d16}
+#app{border:0;display:block}
+.boot{position:fixed;inset:0;display:grid;place-items:center;color:#93a4bb;font:14px system-ui;background:#090d16}
+.boot strong{color:#f4f7fb}
+</style>
+</head>
+<body>
+<div class="boot" id="boot"><div><strong>Miliastra UI Tools</strong><br>Loading editor…</div></div>
+<iframe id="app" title="Miliastra UI Tools editor"></iframe>
+<script>
+(async()=>{
+  try{
+    const opts={cache:'no-store'};
+    const version='20260908b';
+    const [sourceRes,cssRes,siteRes,statusRes,tabsRes,dictionaryKeyTypesRes,
+      dictionaryStructureConfigRes,structureGiaReferencesRes,dataShapeSafetyRes,
+      valueEditorsRes,structureGiaBuildTypesRes,giaDictionariesRes,dictionaryNoNestingRes,
+      finalAudit1Res,finalAudit2Res,finalAudit3Res,workbenchRes]=await Promise.all([
+      'editor-core.html','site.css','site.js','status-display.js','component-tabs.js',
+      'dictionary-key-types.js','dictionary-structure-config.js','structure-gia-references.js',
+      'data-shape-safety.js','value-editors.js','structure-gia-build-types.js',
+      'gia-dictionaries.js','dictionary-no-nesting.js','final-audit-fixes.part1.txt',
+      'final-audit-fixes.part2.txt','final-audit-fixes.part3.txt','component-workbench.js'
+    ].map(name=>fetch('./assets/'+name+'?v='+version,opts)));
+    if(!sourceRes.ok)throw new Error('Failed to load editor-core.html');
+    if(!cssRes.ok)throw new Error('Failed to load site.css');
+    if(!siteRes.ok)throw new Error('Failed to load site.js');
+    if(!statusRes.ok)throw new Error('Failed to load status-display.js');
+    if(!tabsRes.ok)throw new Error('Failed to load component-tabs.js');
+    if(!dictionaryKeyTypesRes.ok)throw new Error('Failed to load dictionary-key-types.js');
+    if(!dictionaryStructureConfigRes.ok)throw new Error('Failed to load dictionary-structure-config.js');
+    if(!structureGiaReferencesRes.ok)throw new Error('Failed to load structure-gia-references.js');
+    if(!dataShapeSafetyRes.ok)throw new Error('Failed to load data-shape-safety.js');
+    if(!valueEditorsRes.ok)throw new Error('Failed to load value-editors.js');
+    if(!structureGiaBuildTypesRes.ok)throw new Error('Failed to load structure-gia-build-types.js');
+    if(!giaDictionariesRes.ok)throw new Error('Failed to load gia-dictionaries.js');
+    if(!dictionaryNoNestingRes.ok)throw new Error('Failed to load dictionary-no-nesting.js');
+    if(!finalAudit1Res.ok||!finalAudit2Res.ok||!finalAudit3Res.ok)throw new Error('Failed to load final audit fixes');
+    if(!workbenchRes.ok)throw new Error('Failed to load component workbench');
+
+    let source=await sourceRes.text();
+    const css=await cssRes.text();
+    const finalAuditCode=(await finalAudit1Res.text())+(await finalAudit2Res.text())+(await finalAudit3Res.text());
+    const scripts=[
+      await siteRes.text(),
+      await statusRes.text(),
+      await tabsRes.text(),
+      await dictionaryKeyTypesRes.text(),
+      await dictionaryStructureConfigRes.text(),
+      await structureGiaReferencesRes.text(),
+      await dataShapeSafetyRes.text(),
+      await valueEditorsRes.text(),
+      await structureGiaBuildTypesRes.text(),
+      await giaDictionariesRes.text(),
+      await dictionaryNoNestingRes.text(),
+      finalAuditCode,
+      await workbenchRes.text()
+    ].join('\n');
+
+    source=source.replace('</style>','\n'+css+'\n</style>');
+    source=source.replace('</body>','<script>'+scripts.replace(/<\/script/gi,'<\\/script')+'<\/script></body>');
+
+    const frame=document.getElementById('app');
+    frame.addEventListener('load',()=>document.getElementById('boot')?.remove(),{once:true});
+    frame.srcdoc=source;
+  }catch(error){
+    console.error(error);
+    document.getElementById('boot').textContent='Editor failed to load: '+String(error.message||error);
+  }
+})();
+</script>
+</body>
+</html>
