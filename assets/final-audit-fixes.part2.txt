@@ -1,0 +1,52 @@
+tructureGiaListValueMessage=function(typeCode,values){
+  const type=Number(typeCode),list=values||[];if(!list.length)return new Uint8Array();
+  if(type===11)return concatBytes(...list.map(v=>encodeField(1,2,encoder.encode(String(v??'')))));
+  if(type===15)return concatBytes(...list.map(v=>encodeField(1,2,concatBytes(encodeField(1,5,floatBytes(v?.x)),encodeField(2,5,floatBytes(v?.y)),encodeField(3,5,floatBytes(v?.z))))));
+  if(type===10)return encodeField(1,2,concatBytes(...list.map(v=>floatBytes(v))));
+  if(referenceLists.has(type))return concatBytes(...list.map(v=>{const id=BigInt(String(v??'0').trim()||'0');return encodeField(1,2,id===0n?new Uint8Array():encodeField(2,0,id));}));
+  if(packedVarintLists.has(type)){
+    const packed=concatBytes(...list.map(v=>{if(type===8)return encodeVarint(BigInt.asUintN(64,BigInt(Math.trunc(Number(v)||0))));if(type===9)return encodeVarint(v?1:0);return encodeVarint(BigInt(String(v??'0').trim()||'0'));}));
+    return encodeField(1,2,packed);
+  }
+  return new Uint8Array();
+};
+
+patchStructureGiaListDefault=function(fieldMessage,typeCode,values){
+  const type=Number(typeCode);if(!listTypes.has(type))return fieldMessage;
+  const mf=parseFields(fieldMessage),dw=findField(mf,3,2),df=parseFields(dw.value),typed=findField(df,type+10,2);
+  return replaceField(fieldMessage,dw,replaceField(dw.value,typed,buildStructureGiaListValueMessage(type,values)));
+};
+
+function readListEditor(item){
+  const info=listInfo(item.typeCode);if(!info)return true;const output=clone(item.listValues||[]);
+  for(const c of elements.structureListEditor.querySelectorAll('[data-structure-list-index]')){
+    const i=Number(c.dataset.structureListIndex);
+    if(info.elementKind==='vector3'){output[i]??={x:0,y:0,z:0};const n=Number(c.value);if(!Number.isFinite(n)){alert(`Vector3 list item ${i+1} must be numeric.`);return false;}output[i][c.dataset.structureListAxis]=n;}
+    else if(info.elementKind==='string')output[i]=c.value;
+    else if(info.elementKind==='integer'){const n=Number(c.value);if(!Number.isFinite(n)){alert(`Integer list item ${i+1} must be numeric.`);return false;}output[i]=Math.trunc(n);}
+    else if(info.elementKind==='bool')output[i]=c.value==='true';
+    else if(info.elementKind==='float'){const n=Number(c.value);if(!Number.isFinite(n)){alert(`Float list item ${i+1} must be numeric.`);return false;}output[i]=n;}
+    else if(info.elementKind==='id'){try{const n=BigInt(c.value.trim()||'0');if(n<0n||n>0xFFFFFFFFFFFFFFFFn)throw 0;output[i]=n.toString();}catch{alert(`${info.label} list item ${i+1} must be an unsigned integer ID.`);return false;}}
+  }
+  item.listValues=output;item.defaultValue=structureListDefaultSummary(item.typeCode,output);return true;
+}
+readStructureListEditor=readListEditor;
+
+function renderList(item){
+  const info=listInfo(item.typeCode);if(!info)return;
+  elements.structureScalarDefaultField.classList.add('hidden');elements.structureListDefaultPanel.classList.remove('hidden');elements.structureListEditor.innerHTML='';
+  item.listValues=Array.isArray(item.listValues)?item.listValues:[];
+  if(!item.listValues.length){const e=document.createElement('div');e.className='structure-list-empty';e.textContent='Empty list. Click + Add Item.';elements.structureListEditor.append(e);}
+  item.listValues.forEach((v,i)=>{const row=document.createElement('div');row.className='structure-list-row';const host=document.createElement('div');host.className='structure-list-value';
+    const make=(value,axis)=>{let c;if(info.elementKind==='bool'){c=document.createElement('select');for(const [x,l] of [['true','True'],['false','False']]){const o=document.createElement('option');o.value=x;o.textContent=l;c.append(o);}c.value=value?'true':'false';}else{c=document.createElement('input');c.type=['integer','float'].includes(info.elementKind)?'number':'text';if(info.elementKind==='integer')c.step='1';if(info.elementKind==='float'||axis)c.step='any';c.value=String(value??'');if(info.elementKind==='id')c.inputMode='numeric';}c.dataset.structureListIndex=String(i);if(axis)c.dataset.structureListAxis=axis;return c;};
+    if(info.elementKind==='vector3'){const g=document.createElement('div');g.className='structure-vector-grid';for(const a of ['x','y','z'])g.append(make(Number(v?.[a])||0,a));host.append(g);}else host.append(make(v));
+    const actions=document.createElement('div');actions.className='structure-list-actions';const buttons=[['↑',()=>{if(!readListEditor(item)||i===0)return;pushHistory('Move Structure list item');[item.listValues[i-1],item.listValues[i]]=[item.listValues[i],item.listValues[i-1]];renderGia();}],['↓',()=>{if(!readListEditor(item)||i>=item.listValues.length-1)return;pushHistory('Move Structure list item');[item.listValues[i],item.listValues[i+1]]=[item.listValues[i+1],item.listValues[i]];renderGia();}],['⧉',()=>{if(!readListEditor(item))return;pushHistory('Duplicate Structure list item');item.listValues.splice(i+1,0,clone(item.listValues[i]));renderGia();}],['×',()=>{if(!readListEditor(item))return;pushHistory('Delete Structure list item');item.listValues.splice(i,1);renderGia();}]];
+    buttons.forEach(([t,fn],j)=>{const b=document.createElement('button');b.className='small'+(j===3?' danger':'');b.textContent=t;b.disabled=(j===0&&i===0)||(j===1&&i===item.listValues.length-1);b.onclick=fn;actions.append(b);});row.append(host,actions);elements.structureListEditor.append(row);
+  });
+  if(elements.structureListAddButton){const oldAdd=elements.structureListAddButton;const freshAdd=oldAdd.cloneNode(true);oldAdd.replaceWith(freshAdd);elements.structureListAddButton=freshAdd;freshAdd.disabled=false;freshAdd.addEventListener('click',event=>{event.preventDefault();event.stopImmediatePropagation();if(!readListEditor(item))return;pushHistory('Add Structure list item');item.listValues.push(defaultListItem(item.typeCode));renderGia();},true);}
+}
+
+/* Add missing direct scalar defaults (Entity, GUID, Faction). */
+function scalarDefault(type){if(type===6)return'';if(type===4)return'False';if(type===5)return'0';if(type===12)return'0,0,0';return'0';}
+function parseScalar(type,raw){type=Number(type);if(type===6)return String(raw??'');const s=String(raw??'').trim();if(type===3){const n=BigInt(s||'0');if(n<-2147483648n||n>2147483647n)throw Error('Integer must fit Int32.');return n.toString();}if(type===4){if(/^(true|1)$/i.test(s))return'True';if(/^(false|0)$/i.test(s))return'False';throw Error('Bool must be True or False.');}if(type===5){if(!Number.isFinite(Number(s)))throw Error('Float must be numeric.');return s||'0';}if(type===12){const p=s.split(',').map(Number);if(p.length!==3||p.some(n=>!Number.isFinite(n)))throw Error('Vector3 must be X,Y,Z.');return p.join(',');}if([1,2,17,20,21].includes(type)){const n=BigInt(s||'0');if(n<0n||n>0xFFFFFFFFFFFFFFFFn)throw Error('ID must be an unsigned integer.');return n.toString();}return s;}
+function scalarPayload(type,value){type=Number(type);const v=parseScalar(type,value);if(type===6)return v?encodeField(1,2,encoder.encode(v)):new Uint8Array();if(type===3)return v==='0'?new Uint8Array():encodeField(1,0,BigInt.asUintN(64,BigInt(v)));if(type===4)return v==='True'?encodeField(1,0,1):new Uint8Array();if(type===5)return Number(v)===0?new Uint8Array():encodeField(1,5,floatBytes(v));if(type===12){const [x,y,z]=v.split(',').map(Number);return encodeField(1,2,(x||y||z)?concatBytes(encodeField(1,5,floatBytes(x)),encodeField(2,5,floatBytes(y)),encodeField(3,5,floatBytes(z))):new Uint8Array());}if(unsignedScalars.has(type))
