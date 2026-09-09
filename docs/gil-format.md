@@ -29,15 +29,15 @@ an archive merely because its payload is large.
 
 All envelope words are unsigned 32-bit **big-endian** integers.
 
-| Offset | Meaning | Rule |
-| --- | --- | --- |
-| 0 | File size excluding footer | Actual byte length minus 4 |
-| 4 | Container version | Reference: 1 |
-| 8 | Header magic | `0x00000326` |
-| 12 | File kind | 2 = GIL, 3 = GIA |
-| 16 | Payload length | Actual byte length minus 24 |
-| 20 | Protobuf payload | Exactly the declared number of bytes |
-| End minus 4 | Footer magic | `0x00000679` |
+| Offset      | Meaning                    | Rule                                 |
+| ----------- | -------------------------- | ------------------------------------ |
+| 0           | File size excluding footer | Actual byte length minus 4           |
+| 4           | Container version          | Reference: 1                         |
+| 8           | Header magic               | `0x00000326`                         |
+| 12          | File kind                  | 2 = GIL, 3 = GIA                     |
+| 16          | Payload length             | Actual byte length minus 24          |
+| 20          | Protobuf payload           | Exactly the declared number of bytes |
+| End minus 4 | Footer magic               | `0x00000679`                         |
 
 The reader rejects truncated and inconsistent envelopes, oversized fields,
 invalid tags, varints above 64 bits, and unsupported wire types. Version 1 edits
@@ -65,50 +65,50 @@ values are never converted to JSON and serialized back as part of a game export.
 These lengths refer to section values, excluding their protobuf tag and length
 prefix. The UI inventory shows the full serialized field size instead.
 
-| Root field | Payload bytes | Interpretation / observed contents |
-| --- | ---: | --- |
-| 2 | 52 | Level name |
-| 3 | 0 | Export metadata, empty |
-| 4 | 141,447 | 93 prefab/template records, repeated field 1 |
-| 5 | 523,575 | 360 scene entities, repeated field 1 |
-| 6 | 13,101 | Categories/configuration, 51 field-1 entries |
-| 7 | 0 | Terrain section, empty |
-| 8 | 119,750 | Component data, 99 field-1 entries; opaque |
-| 9 | 1,836,114 | 2,709 UI records in field 502 |
-| 10 | 1,597,031 | Node graphs and related definitions; preserved |
-| 11 | 589,469 | Level settings; preserved |
-| 12 | 285 | Unmapped |
-| 14 | 78 | Unmapped |
-| 15 | 57,866 | Gameplay configuration; preserved |
-| 16 | 39,648 | Animation/event data; preserved |
-| 17 | 0 | Unmapped, empty |
-| 18 | 363 | Camera templates |
-| 19 | 166 | Unmapped |
-| 20 | 9,525 | Unmapped |
-| 21 | 33 | Unmapped |
-| 22 | 1,401 | Feature flags |
-| 23 | 19 | Unmapped |
-| 25 | 249,287 | Peripheral systems (achievements, scoring, etc.); preserved |
-| 27 | 3,748,833 | 4,073 decoration field-1 records and 20,048 field-2 records |
-| 29 | 55 | Editor information |
-| 30 | 164 | Unmapped |
-| 31 | 6,113 | Unmapped |
-| 32 | 0 | Unmapped, empty |
-| 33 | 2,095 | Unmapped |
-| 35 | 34,961 | Unmapped |
-| 36 | 416 | Localization-related section; preserved |
-| 37 | 7,911,490 | Unmapped; preserved |
-| 38 | 0 | Unmapped, empty |
-| 40 | varint | Unmapped |
-| 41 | varint | Unmapped |
-| 43 | 5 | Game version string |
-| 44 | 0 | Unmapped, empty |
-| 45 | 324 | Unmapped |
-| 46 | 110 | Unmapped |
-| 48 | 223 | Unmapped |
-| 49 | 6,016,253 | Unmapped; preserved |
+| Root field | Payload bytes | Interpretation / observed contents                          |
+| ---------- | ------------: | ----------------------------------------------------------- |
+| 2          |            52 | Level name                                                  |
+| 3          |             0 | Export metadata, empty                                      |
+| 4          |       141,447 | 93 prefab/template records, repeated field 1                |
+| 5          |       523,575 | 360 scene entities, repeated field 1                        |
+| 6          |        13,101 | Categories/configuration, 51 field-1 entries                |
+| 7          |             0 | Terrain section, empty                                      |
+| 8          |       119,750 | Component data, 99 field-1 entries; opaque                  |
+| 9          |     1,836,114 | 2,709 UI records in field 502                               |
+| 10         |     1,597,031 | Node graphs and related definitions; preserved              |
+| 11         |       589,469 | Level settings; preserved                                   |
+| 12         |           285 | Unmapped                                                    |
+| 14         |            78 | Unmapped                                                    |
+| 15         |        57,866 | Gameplay configuration; preserved                           |
+| 16         |        39,648 | Animation/event data; preserved                             |
+| 17         |             0 | Unmapped, empty                                             |
+| 18         |           363 | Camera templates                                            |
+| 19         |           166 | Unmapped                                                    |
+| 20         |         9,525 | Unmapped                                                    |
+| 21         |            33 | Unmapped                                                    |
+| 22         |         1,401 | Feature flags                                               |
+| 23         |            19 | Unmapped                                                    |
+| 25         |       249,287 | Peripheral systems (achievements, scoring, etc.); preserved |
+| 27         |     3,748,833 | 4,073 decoration field-1 records and 20,048 field-2 records |
+| 29         |            55 | Editor information                                          |
+| 30         |           164 | Unmapped                                                    |
+| 31         |         6,113 | Unmapped                                                    |
+| 32         |             0 | Unmapped, empty                                             |
+| 33         |         2,095 | Unmapped                                                    |
+| 35         |        34,961 | Unmapped                                                    |
+| 36         |           416 | Localization-related section; preserved                     |
+| 37         |     7,911,490 | Unmapped; preserved                                         |
+| 38         |             0 | Unmapped, empty                                             |
+| 40         |        varint | Unmapped                                                    |
+| 41         |        varint | Unmapped                                                    |
+| 43         |             5 | Game version string                                         |
+| 44         |             0 | Unmapped, empty                                             |
+| 45         |           324 | Unmapped                                                    |
+| 46         |           110 | Unmapped                                                    |
+| 48         |           223 | Unmapped                                                    |
+| 49         |     6,016,253 | Unmapped; preserved                                         |
 
-The object count (7,235) includes only the indexed record families above. It
+The object count (7,235) includes only the indexed record families above. The v2 editor also exposes 31 other message sections in its Advanced fields view. It
 does not count field-27/2 entries as extra scene entities because their schema
 is not established. It is not a count of every object-like record in the file.
 
@@ -116,13 +116,13 @@ is not established. It is not a count of every object-like record in the file.
 
 Scene: `root.5.1[i]`. Prefab: `root.4.1[i]`.
 
-| Meaning | Scene record | Prefab record |
-| --- | --- | --- |
-| ID | field 1, varint | field 1, varint |
-| Template reference | field 2 message, ID at 1; field 8 fallback/reference | field 2, varint |
-| Properties | repeated field 5 | repeated field 6 |
-| Components | repeated field 6 | repeated field 7 |
-| Custom data blocks | repeated field 7 | repeated field 8 |
+| Meaning            | Scene record                                         | Prefab record    |
+| ------------------ | ---------------------------------------------------- | ---------------- |
+| ID                 | field 1, varint                                      | field 1, varint  |
+| Template reference | field 2 message, ID at 1; field 8 fallback/reference | field 2, varint  |
+| Properties         | repeated field 5                                     | repeated field 6 |
+| Components         | repeated field 6                                     | repeated field 7 |
+| Custom data blocks | repeated field 7                                     | repeated field 8 |
 
 The name property has type field `1 = 1`, and a field-11 message containing the
 name string at field 1. The custom-variable block also uses type `1 = 1`, with
@@ -134,13 +134,13 @@ implementation follows the actual supplied bytes and corroborating parser.
 
 ### Variable definition
 
-| Field | Meaning |
-| --- | --- |
-| 2 | Variable name, UTF-8 |
-| 3 | Numeric type code |
-| 4 | Typed value wrapper |
-| 5 | Existing flag; preserved |
-| 6 | Type/schema metadata; preserved |
+| Field | Meaning                         |
+| ----- | ------------------------------- |
+| 2     | Variable name, UTF-8            |
+| 3     | Numeric type code               |
+| 4     | Typed value wrapper             |
+| 5     | Existing flag; preserved        |
+| 6     | Type/schema metadata; preserved |
 
 A typed value contains its type code at field 1, type/reference metadata at
 field 2, and a type-specific message at `typeCode + 10`. Optional field 501 text
@@ -148,19 +148,19 @@ provides a member/variable name. Values and their schema metadata must agree.
 
 ### Implemented typed values
 
-| Code | Type | Value message | Writable in full games |
-| --- | --- | --- | --- |
-| 3 | Int32 | field 13; field 1 varint, absent = 0 | Yes |
-| 4 | Boolean | field 14; field 1 varint, absent = false | Yes |
-| 5 | Float32 | field 15; field 1 fixed32, absent = 0 | Yes |
-| 6 | String | field 16; field 1 UTF-8, absent = empty | Yes |
-| 8 | Int32 list | field 18; repeated/packed field 1 | Yes |
-| 9 | Boolean list | field 19; repeated/packed field 1 | Yes |
-| 10 | Float32 list | field 20; repeated/packed field 1 | Yes |
-| 11 | String list | field 21; repeated UTF-8 field 1 | Yes |
-| 25 | Structure | field 35; typed members at repeated field 1 | Existing supported leaves |
-| 26 | Structure list | field 36; typed Structure wrappers at field 1 | Existing supported leaves |
-| 27 | Dictionary | field 37; mirrored representations | Read-only |
+| Code | Type           | Value message                                 | Writable in full games                   |
+| ---- | -------------- | --------------------------------------------- | ---------------------------------------- |
+| 3    | Int32          | field 13; field 1 varint, absent = 0          | Yes                                      |
+| 4    | Boolean        | field 14; field 1 varint, absent = false      | Yes                                      |
+| 5    | Float32        | field 15; field 1 fixed32, absent = 0         | Yes                                      |
+| 6    | String         | field 16; field 1 UTF-8, absent = empty       | Yes                                      |
+| 8    | Int32 list     | field 18; repeated/packed field 1             | Yes                                      |
+| 9    | Boolean list   | field 19; repeated/packed field 1             | Yes                                      |
+| 10   | Float32 list   | field 20; repeated/packed field 1             | Yes                                      |
+| 11   | String list    | field 21; repeated UTF-8 field 1              | Yes                                      |
+| 25   | Structure      | field 35; typed members at repeated field 1   | Existing supported leaves                |
+| 26   | Structure list | field 36; typed Structure wrappers at field 1 | Existing supported leaves                |
+| 27   | Dictionary     | field 37; mirrored representations            | Existing values, when both mirrors match |
 
 Signed Int32 values use two's-complement varints, not ZigZag. Negative output
 uses sign-extended 64-bit varints. Inputs outside the Int32 range are rejected.
@@ -174,11 +174,13 @@ populated Int32 lists and an empty String list; it does not contain controlled
 populated examples for every enabled primitive-list writer. Synthetic tests
 cover all four encodings. This distinction matters for compatibility claims.
 
-Reference types (Entity, GUID, Configuration ID, Prefab ID), Faction, Vector3,
-and their lists remain read-only in the full-game workspace. Reference wrappers
-can use `1 -> {1: kind, 2: ID}` rather than a plain scalar ID. Vector3 uses a
-nested field-1 vector message. Do not apply primitive integer serialization to
-these types.
+Reference types (Entity, GUID, Configuration ID, Prefab ID), Faction, and
+Vector3 are editable through their own codecs. Entity/GUID/Faction values use
+unsigned decimal strings so they do not lose precision above JavaScript's safe
+integer range. Configuration/Prefab references retain their nested field-1
+message, existing reference-kind metadata, and field-2 ID. Vector3 retains its
+nested field-1 vector message. Reference lists have dedicated encodings;
+Vector3-list editing is not implemented in the binary model.
 
 Structures retain configuration IDs and member order. The editor changes only
 recognized leaf values. Structure-list row creation/deletion/reordering is not
@@ -196,9 +198,15 @@ Conquest dictionaries contain all of:
 - optional field 505: value Structure configuration ID;
 - entry-specific metadata and references.
 
-Editing just one view could leave the file internally inconsistent. Dictionaries
-are readable and exported untouched. The existing variable-JSON dictionary
-editor remains separate because JSON does not have this same binary layout.
+Editing just one view could leave the file internally inconsistent. The v2
+reader compares every key/value mirror against the corresponding two children
+inside each serialized pair. Existing entry values are editable only when all
+pairs match. Nested edits update both copies atomically and preserve entry IDs
+and other metadata. Duplicate keys are rejected. Mismatched layouts remain
+read-only. Binary dictionary row creation/removal is not implemented.
+
+Variable JSON uses a separate schema-aware model and supports dictionary row
+creation, reordering, removal, and nested values without inventing binary IDs.
 
 ## UI controls and List rows
 
@@ -237,21 +245,45 @@ Row generation copies an existing row template. Names can use `{n}` sequences;
 other fields remain copied. Ordering is normalized to 1..N, then serialized in
 descending order as observed in the reference and existing GIA editor. At least
 one row must remain. This does not create new control identities or synthesize
-an independent visual layout. The data preview is explicitly not an in-game
-render of the control.
+an independent visual layout.
 
 ## GIA support
 
-The component builder retains the repository's existing validated templates and
-modules. The new row generator appends cloned rows to Single Choice, Deck
-Selector, and Tab documents. It does not fabricate a new standalone List format.
+The interface and component editing modules have been rebuilt. Three small
+starting templates are derived from the original repository's generated blank
+Single Choice, Tab, and Deck components. Their known UI IDs are remapped to
+fresh temporary IDs when created. No legacy runtime/iframe is loaded.
 
-The full-file workspace also opens arbitrary valid GIA envelopes for preservation
-and inspection. Root fields 1 and 2 contain asset records. Asset fields 1 and 3
-provide reference metadata and a name. UI content is under `19.1`; entity content
-under `11.1` can expose the supported entity variable block. Unsupported asset
-shapes remain opaque. The component detector now rejects GIL envelopes and
-invalid GIA lengths/magic before recursively searching for supported shapes.
+Root fields 1 and 2 contain asset records. Asset fields 1 and 3 provide reference
+metadata and a name. UI content is under `19.1`. **Scene content is `12.1` and
+prefab content is `11.1`**, with custom data blocks at 7 and 8 respectively.
+This distinction is confirmed by the supplied Explainer pair.
+
+Structure GIA definitions are at `asset.22.1.1`: ID at 1, name at 501, repeated
+member definitions at 3, member names at 501/5, type at 502, order at 503, and
+typed default value at member field 3. The supplied Structure includes nested
+Structure/Structure-list defaults, references, vectors, primitive lists, and a
+Prefab-ID-to-Structure-list dictionary. The editor indexes primary and
+referenced definitions separately and edits defaults while retaining schema
+metadata. New binary definition/member creation is not implemented.
+
+### Text bubbles
+
+The before/after Explainer exports identify custom data component type 28,
+message 39, repeated bubble records at 501. Each bubble has ID 501, attachment
+point 503, font size 511, configuration name 601, and repeated text lines at 509. Literal line kind 18 stores text at `503.501`, duration at 504, and line ID
+at 601. The empty new bubble has a distinct ID and appears before the existing
+bubbles. The editor changes existing values, retaining bubble identities and
+all other metadata. Creating/removing bubble records is not implemented.
+
+### Advanced fields
+
+Each indexed binary record offers existing scalar/text fields by their exact
+field-number and occurrence path. Varints and fixed-width integer bits use
+unsigned decimal strings; fixed32 also offers an explicit Float32
+interpretation. String/message ambiguities favor retaining the message.
+Unknown byte blocks are not converted to guessed text. This view does not
+infer a field's meaning or repair game references. It is not a complete schema.
 
 There is no automatic asset-to-game merge. Existing project-specific references
 would require a validated remapping/dependency strategy. Use Miliastra's native
@@ -260,7 +292,7 @@ import workflow for generated GIA components.
 ## Edits, history, and export
 
 `GameDocument` keeps immutable original record bytes and a map of edited record
-buffers. History retains up to 100 record changes. Edits inside the same record
+buffers. History retains up to 100 changes, including atomic multi-record transactions for Formal Variable creation. Edits inside the same record
 compose against its latest bytes. Multiple modified records in the same section
 are combined before that section is written into the root.
 
@@ -277,7 +309,7 @@ are combined before that section is written into the root.
 `npm test` covers envelope rejection, integer precision, mixed packed encoding,
 Unicode/multiline strings, limits, opaque fields, list generation/import,
 multi-object edits, undo/redo, future-version rejection, UI row metadata, and
-DOM interaction tests for the workspace and existing component generators.
+DOM interaction tests for the native interface. It also checks dictionary mirror updates, Formal Variable transactions, and JSON wrapper preservation.
 
 Run the full reference regression with:
 
@@ -301,3 +333,19 @@ tests prove preservation and internal consistency of the implemented shapes,
 not that every changed file passes the game's own semantic validation. Future
 work should use controlled before/after game exports for reference types,
 structure-row lifecycle, dictionary mirrors, asset merging, and unmapped sections.
+
+## Additional v2 sample regression
+
+`npm run test:samples -- "path/to/sample-folder"` reads the supplied files locally:
+
+- `Test Structure.gia`: 60 asset records; 65 scalar/list/default edits, including
+  nested dictionary values, exported and reopened.
+- `Explainer.gia`: scene and prefab variables plus 10 existing text-line edits.
+- `Explaine (Added a empty text bubble).gia`: scene and prefab variables plus
+  11 text-line edits, including the newly added empty line.
+- `Test Structure.json`: all seven root fields recognized; wrapper-preserving
+  list edits, export and reopen, and exact unedited text preservation.
+
+The samples are not committed or deployed. Their content is used only in local
+checks. Browser checks exercise the native file chooser and editors. These
+checks do not replace an in-game import/playtest.
