@@ -1,87 +1,18 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0b1020">
-<meta name="description" content="Fast, local-only editor and builder for Miliastra UI component GIA and variable export files.">
-<link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
-<title>Miliastra UI Tools · Data Editor</title>
-<style>
-html,body,#app{width:100%;height:100%;margin:0;background:#090d16}
-#app{border:0;display:block}
-.boot{position:fixed;inset:0;display:grid;place-items:center;color:#93a4bb;font:14px system-ui;background:#090d16}
-.boot strong{color:#f4f7fb}
-</style>
-</head>
-<body>
-<div class="boot" id="boot"><div><strong>Miliastra UI Tools</strong><br>Loading editor…</div></div>
-<iframe id="app" title="Miliastra UI Tools editor"></iframe>
-<script>
-(async()=>{
-  try{
-    const opts={cache:'no-store'};
-    const version='20260908a';
-    const sourceRes=await fetch('./assets/editor-core.html?v='+version,opts);
-    const cssRes=await fetch('./assets/site.css?v='+version,opts);
-    const siteRes=await fetch('./assets/site.js?v='+version,opts);
-    const statusRes=await fetch('./assets/status-display.js?v='+version,opts);
-    const tabsRes=await fetch('./assets/component-tabs.js?v='+version,opts);
-    const dictionaryKeyTypesRes=await fetch('./assets/dictionary-key-types.js?v='+version,opts);
-    const dictionaryStructureConfigRes=await fetch('./assets/dictionary-structure-config.js?v='+version,opts);
-    const structureGiaReferencesRes=await fetch('./assets/structure-gia-references.js?v='+version,opts);
-    const dataShapeSafetyRes=await fetch('./assets/data-shape-safety.js?v='+version,opts);
-    const valueEditorsRes=await fetch('./assets/value-editors.js?v='+version,opts);
-    const structureGiaBuildTypesRes=await fetch('./assets/structure-gia-build-types.js?v='+version,opts);
-    const giaDictionariesRes=await fetch('./assets/gia-dictionaries.js?v='+version,opts);
-    const dictionaryNoNestingRes=await fetch('./assets/dictionary-no-nesting.js?v='+version,opts);
-    const finalAudit1Res=await fetch('./assets/final-audit-fixes.part1.txt?v='+version,opts);
-    const finalAudit2Res=await fetch('./assets/final-audit-fixes.part2.txt?v='+version,opts);
-    const finalAudit3Res=await fetch('./assets/final-audit-fixes.part3.txt?v='+version,opts);
-    if(!sourceRes.ok)throw new Error('Failed to load editor-core.html');
-    if(!cssRes.ok)throw new Error('Failed to load site.css');
-    if(!siteRes.ok)throw new Error('Failed to load site.js');
-    if(!statusRes.ok)throw new Error('Failed to load status-display.js');
-    if(!tabsRes.ok)throw new Error('Failed to load component-tabs.js');
-    if(!dictionaryKeyTypesRes.ok)throw new Error('Failed to load dictionary-key-types.js');
-    if(!dictionaryStructureConfigRes.ok)throw new Error('Failed to load dictionary-structure-config.js');
-    if(!structureGiaReferencesRes.ok)throw new Error('Failed to load structure-gia-references.js');
-    if(!dataShapeSafetyRes.ok)throw new Error('Failed to load data-shape-safety.js');
-    if(!valueEditorsRes.ok)throw new Error('Failed to load value-editors.js');
-    if(!structureGiaBuildTypesRes.ok)throw new Error('Failed to load structure-gia-build-types.js');
-    if(!giaDictionariesRes.ok)throw new Error('Failed to load gia-dictionaries.js');
-    if(!dictionaryNoNestingRes.ok)throw new Error('Failed to load dictionary-no-nesting.js');
-    if(!finalAudit1Res.ok||!finalAudit2Res.ok||!finalAudit3Res.ok)throw new Error('Failed to load final audit fixes');
-
-    let source=await sourceRes.text();
-    const css=await cssRes.text();
-    const finalAuditCode=(await finalAudit1Res.text())+(await finalAudit2Res.text())+(await finalAudit3Res.text());
-    const scripts=[
-      await siteRes.text(),
-      await statusRes.text(),
-      await tabsRes.text(),
-      await dictionaryKeyTypesRes.text(),
-      await dictionaryStructureConfigRes.text(),
-      await structureGiaReferencesRes.text(),
-      await dataShapeSafetyRes.text(),
-      await valueEditorsRes.text(),
-      await structureGiaBuildTypesRes.text(),
-      await giaDictionariesRes.text(),
-      await dictionaryNoNestingRes.text(),
-      finalAuditCode
-    ].join('\n');
-
-    source=source.replace('</style>','\n'+css+'\n</style>');
-    source=source.replace('</body>','<script>'+scripts.replace(/<\/script/gi,'<\\/script')+'<\/script></body>');
-
-    const frame=document.getElementById('app');
-    frame.addEventListener('load',()=>document.getElementById('boot')?.remove(),{once:true});
-    frame.srcdoc=source;
-  }catch(error){
-    console.error(error);
-    document.getElementById('boot').innerHTML='<div><strong>Editor failed to load.</strong><br>'+String(error.message||error)+'</div>';
-  }
-})();
-</script>
-</body>
-</html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#090d16">
+<meta name="description" content="Build Miliastra UI lists and edit scene and prefab data in GIL and GIA files, entirely in your browser.">
+<link rel="icon" href="./assets/icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./assets/workspace.css"><title>Miliastra UI Tools · Game workspace</title>
+</head><body>
+<header class="app-header"><a class="brand" href="./"><span class="brand-mark">M</span><span>Miliastra <b>UI Tools</b></span></a><nav aria-label="Workspace"><button class="nav active" data-view="game">Game workspace</button><button class="nav" data-view="builder">UI builder</button><button class="nav" data-view="format">Format guide</button></nav><span class="local-badge"><i></i> Files stay on your device</span></header>
+<main id="game-view" class="view">
+<section class="filebar" aria-label="File actions"><div class="file-info"><span class="file-icon">GIL</span><div><strong id="file-name">No game file open</strong><small id="file-meta">Open a level to explore its objects and lists</small></div></div><div class="file-actions"><button id="undo" disabled title="Undo (Ctrl+Z)">↶ Undo</button><button id="redo" disabled title="Redo (Ctrl+Shift+Z)">↷ Redo</button><button id="open-file">Open file</button><button id="export-file" class="primary" disabled>Export file ↓</button></div><input id="file-input" type="file" accept=".gil,.gia,.json" hidden></section>
+<div id="welcome" class="welcome"><div class="welcome-heading"><span class="eyebrow">YOUR GAME, DOWN TO THE LIST ITEMS</span><h1>A workspace for your Miliastra files.</h1><p>Build UI components, edit object data, and keep the rest of your game intact.</p></div><div class="start-grid"><button id="drop-zone" class="drop-zone"><span class="upload-symbol">↥</span><strong>Open your game or asset</strong><span>Drop a .gil or .gia file here, or browse</span><small>Local processing · Original file stays unchanged</small></button><section class="start-build"><span class="eyebrow">BUILD SOMETHING NEW</span><h2>Start with a UI element</h2><p>Create a list, a selection window, or a set of tabs from the existing component templates.</p><div class="start-buttons"><button data-build="single" class="primary">Create a choice list →</button><button data-build="deck">Deck selector</button><button data-build="tab">Tabs</button><button data-build="structure">Structure / list data</button></div></section></div><div class="welcome-bottom"><button id="demo">Explore a small example →</button><span>Or open a variable .json in the UI builder.</span></div></div>
+<div id="workspace" class="workspace" hidden><aside class="explorer" aria-label="Game objects"><div class="explorer-top"><span class="eyebrow">EXPLORER</span><button id="report" class="quiet" title="Download an inventory as JSON">Inventory ↓</button></div><div class="categories" id="categories"></div><label class="search-box"><span>⌕</span><input id="object-search" type="search" placeholder="Find an object, ID, or variable…" aria-label="Search objects"></label><label class="check-line"><input id="only-lists" type="checkbox"> Only objects with lists</label><div class="result-count" id="result-count"></div><div id="object-list" class="object-list"></div><div class="pagination"><button id="objects-prev" aria-label="Previous objects">←</button><span id="object-page"></span><button id="objects-next" aria-label="Next objects">→</button></div></aside><section class="object-editor" id="object-editor" aria-label="Object editor"><div class="blank-state">Select an object to inspect its data.</div></section></div>
+<footer class="statusbar"><span id="status" role="status" aria-live="polite">Ready. Your files are processed locally.</span><span id="change-count">No changes</span></footer></main>
+<section id="builder-view" class="view builder-view" hidden><div class="builder-note"><span>Component editor · Create and export .gia and variable .json files</span><button id="builder-new">Build new</button><button id="builder-open">Open component</button><a href="./components.html" target="_blank" rel="noopener">Open in a full tab ↗</a></div><iframe id="builder-frame" title="Miliastra component and list builder"></iframe><p id="builder-loading" role="status">Loading component tools…</p></section>
+<section id="format-view" class="view format-view" hidden><div class="guide"><span class="eyebrow">FORMAT NOTES</span><h1>Know what changes.</h1><p>The editor patches recognized values and preserves unknown data. Full-game support is based on the supplied Conquest file and public format research; generated files still need an import check in Miliastra.</p><h2>One envelope, two workflows</h2><div class="envelope"><div>20-byte header<small>Size · version · magic · type · payload length</small></div><div>Protobuf payload<small>Game sections or exported assets</small></div><div>4-byte footer<small>Magic: 0x0679</small></div></div><p>Header words use big-endian order. Protobuf numbers use varints and little-endian fixed values. The header size excludes the footer; payload length excludes all 24 envelope bytes.</p>
+<h2>What you can do</h2><table><thead><tr><th>Data</th><th>Available here</th></tr></thead><tbody><tr><td>Whole .gil / .gia files</td><td>Open, inspect, export unchanged byte-for-byte, or export a patched copy.</td></tr><tr><td>Scene and prefab variables</td><td>Edit existing Integer, Boolean, Float, and String values, including values inside existing Structures.</td></tr><tr><td>Primitive lists</td><td>Add, edit, duplicate, reorder, remove, generate sequences, and import/export JSON or CSV for Integer, Boolean, Float, and String lists.</td></tr><tr><td>Existing Structure lists</td><td>Edit supported values inside existing rows. New rows require confirmed handling of project-specific metadata.</td></tr><tr><td>UI List controls</td><td>Edit existing row names and literal Formal Variable values; duplicate, reorder, remove, or generate rows from a selected template.</td></tr><tr><td>UI components</td><td>The UI builder retains Single Choice, Deck Selector, Tab, Status Display, Structure, and variable JSON tools.</td></tr><tr><td>Dictionaries, IDs, vectors, graphs, terrain</td><td>Inspect and preserve. Full-game editing for these shapes is not enabled.</td></tr></tbody></table>
+<h2>Preservation comes first</h2><p>Unknown fields, metadata, reference IDs, and unedited sections remain opaque bytes. Edits only rebuild the affected value and its enclosing length prefixes. A file opened and exported without edits is identical to the original. Reference IDs are not interchangeable with plain integers; dictionaries also contain mirrored values.</p><div id="section-report"></div><h2>Research and limits</h2><p>Conquest contains additional sections beyond the public schema. Unmapped sections are retained and listed by field number, without guessed meanings. Container version 1 supports edits; other versions open read-only.</p><p><a href="https://github.com/script-1024/genshin-miliastra-file-format/blob/main/docs/en/Overview.md" target="_blank" rel="noopener">Format envelope reference ↗</a> · <a href="https://github.com/marcos0318/auto-miliastra" target="_blank" rel="noopener">Entity parser reference ↗</a> · <a href="./docs/gil-format.md" target="_blank">Detailed implementation notes ↗</a></p></div></section>
+<dialog id="bulk-dialog"><form method="dialog"><div class="dialog-head"><h2 id="bulk-title">Edit list data</h2><button value="cancel" aria-label="Close">×</button></div><p id="bulk-help"></p><label>Input format<select id="bulk-format"><option value="json">JSON array</option><option value="lines">One value per line</option><option value="csv">CSV (one value column, no header)</option></select></label><textarea id="bulk-text" rows="12" spellcheck="false" aria-label="List data"></textarea><p id="bulk-error" role="alert"></p><div class="dialog-actions"><button value="cancel">Cancel</button><button type="button" class="primary" id="bulk-apply">Replace list</button></div></form></dialog>
+<script type="module" src="./assets/workspace.mjs"></script></body></html>

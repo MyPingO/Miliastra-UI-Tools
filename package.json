@@ -1,0 +1,14 @@
+{
+  "name": "miliastra-ui-tools",
+  "private": true,
+  "version": "1.1.0",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/serve.mjs",
+    "test:reference": "node scripts/check-reference.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0"
+  }
+}

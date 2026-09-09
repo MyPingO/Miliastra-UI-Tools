@@ -2,7 +2,7 @@
 'use strict';
 const assetRoot=new URL('./assets/',window.parent.location.href);
 const base=new URL('status-v2.part',assetRoot).href;
-(async()=>{
+globalThis.miliastraEnhancementsReady=(async()=>{
   try{
     const [responses,labelRes,deckRes]=await Promise.all([
       Promise.all([1,2,3,4,5,6].map(i=>fetch(`${base}${i}.txt?v=20260905j`,{cache:'no-store'}))),

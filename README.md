@@ -1,12 +1,60 @@
 # Miliastra UI Tools
 
-Browser-based tools for editing and building supported Miliastra UI component `.gia` exports and variable `.json` exports.
+Browser-based tools for editing full Miliastra `.gil` games, supported UI component `.gia` exports, and variable `.json` exports.
 
 The editor runs entirely in the browser. Files you open are processed locally and are not uploaded by the site.
 
 ## Live site
 
 https://mypingo.github.io/Miliastra-UI-Tools/
+
+## Game workspace
+
+The main page opens `.gil` and `.gia` files into a searchable object workspace.
+The original component editor is available under **UI builder**, or directly at
+`components.html`.
+
+- Browse scene entities, prefabs, UI controls, and decorations. Search by name,
+  ID, template ID, or variable name; filter to objects containing lists.
+- Edit existing Integer, Boolean, Float, and String variables, including
+  supported values nested inside existing Structures and Structure-list rows.
+- Add, duplicate, reorder, delete, paste, generate, and import/export primitive
+  list values. Bulk input supports JSON arrays, one value per line, and CSV.
+- Edit actual UI List rows in the game: row names, supported literal Formal
+  Variable values, ordering, and generation from an existing row template.
+- Inspect dictionaries and reference values without changing their binary
+  representations. Download an object inventory as JSON.
+- Explore original protobuf fields and section sizes in **Format guide**.
+- Undo/redo up to 100 record edits and export a separate edited game file.
+- Try the synthetic example locally; it is intentionally not offered as a
+  playable game export.
+
+Unknown fields and untouched sections are preserved. Opening and exporting a
+file without edits is byte-identical. The full-game implementation was checked
+against the supplied 22.9 MB Conquest file; **in-game import/playtest validation
+is still required**. Dictionaries, ID references, vector values, structure-row
+creation, and arbitrary game sections remain read-only in this workspace.
+
+See [the format notes](docs/gil-format.md) for the measured schema, byte layout,
+evidence, test results, and explicitly unsupported operations.
+
+## Development
+
+Requires Node.js 22 or later. Runtime functionality has no package dependencies;
+`jsdom` is used only for development tests.
+
+```sh
+npm ci
+npm run dev
+npm test
+npm run build
+node scripts/check-reference.mjs "path/to/reference.gil"
+```
+
+The static build is written to `dist/`. GitHub Pages can continue serving the
+repository root; all routes and asset references are relative. User game files,
+media, and local analysis artifacts are not included in the site. The optional
+Sites manifest identifies a separate private preview, not the GitHub Pages site.
 
 ## Supported UI component workflows
 
@@ -106,6 +154,7 @@ Dictionary key types exposed by the JSON editor are String, Integer, GUID, Confi
 - CSV import where supported
 - Keyboard shortcuts
 - Separate selected-item and component-settings views for supported UI components
+- Generate numbered rows in Single Choice, Deck Selector, and Tab files from a selected template item
 
 ## Compatibility and serialization
 
