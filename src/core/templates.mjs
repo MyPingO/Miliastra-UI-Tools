@@ -9,16 +9,25 @@ export const TEMPLATES = [
   { id: 'dictionary-json', name: 'Variable JSON', detail: 'Typed dictionary entries' },
 ];
 export async function createTemplate(id) {
+  const newJSON = (name, value) => {
+    const session = new JsonSession(name, JSON.stringify(value));
+    session.newFile = true;
+    return session;
+  };
   if (id === 'structure-json')
-    return new JsonSession(
-      'New Structure.json',
-      JSON.stringify({ type: 'Struct', struct_ype: 'basic', name: 'New Structure', value: [] }),
-    );
+    return newJSON('New Structure.json', {
+      type: 'Struct',
+      struct_ype: 'basic',
+      name: 'New Structure',
+      value: [],
+    });
   if (id === 'dictionary-json')
-    return new JsonSession(
-      'New Variable.json',
-      JSON.stringify({ type: 'Dict', key_type: 'String', value_type: 'String', value: [] }),
-    );
+    return newJSON('New Variable.json', {
+      type: 'Dict',
+      key_type: 'String',
+      value_type: 'String',
+      value: [],
+    });
   if (!TEMPLATES.some((t) => t.id === id)) throw new Error('Unknown template.');
   const response = await fetch(new URL(`../../assets/templates/${id}.json`, import.meta.url));
   if (!response.ok) throw new Error('Could not load the component template.');

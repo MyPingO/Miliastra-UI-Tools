@@ -178,9 +178,9 @@ export function componentLists(doc, record) {
       { id: 'title', label: 'Title', type: 'String' },
       { id: 'description', label: 'Description', type: 'String' },
       { id: 'tag', label: 'Tag', type: 'String' },
-      { id: 'icon', label: 'Icon ID', type: 'ConfigReference' },
-      { id: 'deckType', label: 'Alternate deck', type: 'Bool' },
-      { id: 'tagCode', label: 'Tag code', type: 'ConfigReference' },
+      { id: 'icon', label: 'Icon ID', type: 'ConfigReference', preserveOnAdd: true },
+      { id: 'deckType', label: 'Alternate deck', type: 'Bool', preserveOnAdd: true },
+      { id: 'tagCode', label: 'Tag code', type: 'ConfigReference', preserveOnAdd: true },
     ],
   }));
   return [...standard, ...decks];

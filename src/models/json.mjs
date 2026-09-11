@@ -161,6 +161,12 @@ export class JsonSession {
       if (nameKey)
         base.rename = (value) => {
           if (!value.trim()) throw new Error('Enter a name.');
+          const siblings = path.length ? at(this.root, path.slice(0, -1)) : null;
+          if (
+            Array.isArray(siblings) &&
+            siblings.some((sibling, i) => i !== path.at(-1) && sibling?.[nameKey] === value)
+          )
+            throw new Error('Field names must be unique.');
           this.change([...path, nameKey], value, 'Rename field');
         };
       if ('structId' in data)
@@ -292,7 +298,25 @@ export class JsonSession {
         ...base,
         kind: 'scalar',
         value: scalar(type, value),
-        set: (v) => this.change(p, encode(type, v, at(this.root, p)), 'Edit ' + label),
+        set: (v) => {
+          const encoded = encode(type, v, at(this.root, p));
+          // Check dictionary keys before committing so errors stay beside the edited key.
+          const keyIndex = path.lastIndexOf('key');
+          if (keyIndex >= 2 && typeof path[keyIndex - 1] === 'number') {
+            const entries = at(this.root, path.slice(0, keyIndex - 1));
+            if (
+              Array.isArray(entries) &&
+              entries.some(
+                (entry, i) =>
+                  i !== path[keyIndex - 1] &&
+                  JSON.stringify(scalar(type, entry.key?.value ?? entry.key)) ===
+                    JSON.stringify(scalar(type, encoded)),
+              )
+            )
+              throw new Error('Dictionary keys must be unique.');
+          }
+          this.change(p, encoded, 'Edit ' + label);
+        },
       };
     }
     if (Array.isArray(data))
@@ -308,6 +332,8 @@ export class JsonSession {
         kind: 'struct',
         children: Object.entries(data).map(([k, v]) => this.node(v, [...path, k], k)),
       };
+    if (data === null)
+      return { ...base, kind: 'readonly', type: 'Empty', value: 'No value (null)' };
     const primitiveType =
       typeof data === 'boolean' ? 'Bool' : typeof data === 'number' ? 'Float' : 'String';
     return {

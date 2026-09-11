@@ -1,10 +1,4 @@
-import * as W from '../../assets/game-wire.mjs';
-import {
-  properties,
-  storedFields,
-  writeProperty,
-  fieldPath,
-} from '../../assets/game-properties.mjs';
+import { properties, writeProperty } from '../../assets/game-properties.mjs';
 import {
   componentLists,
   saveRows,
@@ -24,30 +18,52 @@ export function renderInspector(host, session, record, context) {
   const header = el('header', 'inspector-header'),
     titles = el('div');
   titles.append(
-    el('div', 'eyebrow', record.kind === 'json' ? 'JSON document' : record.kind),
+    el(
+      'div',
+      'eyebrow',
+      {
+        json: 'JSON document',
+        ui: 'UI element',
+        scene: 'Scene object',
+        prefab: 'Prefab',
+        structure: 'Structure',
+        decoration: 'Decoration',
+      }[record.kind] || 'Object',
+    ),
     el('h1', '', record.name),
   );
   const meta = el('div', 'object-meta');
-  meta.append(el('span', '', record.id));
-  if (session.doc) meta.append(el('span', '', numberFormat(session.doc.bytes(record).length)));
+  if (session.doc)
+    meta.append(
+      el('span', '', 'ID ' + record.id),
+      el('span', '', numberFormat(session.doc.bytes(record).length)),
+    );
   titles.append(meta);
   header.append(titles);
   host.append(header);
   const tabs = el('div', 'inspector-tabs'),
     body = el('div', 'inspector-body');
   host.append(tabs, body);
+  tabs.hidden = session.format === 'JSON';
   let selected = context.tab || 'data';
-  if (session.format === 'JSON') selected = 'data';
+  if (session.format === 'JSON' || !['data', 'properties'].includes(selected)) selected = 'data';
+  if (session.doc && session.doc.container.version !== 1)
+    host.append(
+      el(
+        'p',
+        'read-only-notice',
+        'This file version is read-only. You can view its data and export the original file.',
+      ),
+    );
   for (const [key, label] of [
     ['data', 'Lists & variables'],
     ['properties', 'Properties'],
-    ['advanced', 'Advanced fields'],
   ]) {
     if (session.format === 'JSON' && key !== 'data') continue;
     const b = button(label, () =>
       context.run(() => {
         context.setTab(key);
-        draw(key);
+        context.refresh();
       }),
     );
     b.dataset.tab = key;
@@ -62,7 +78,6 @@ export function renderInspector(host, session, record, context) {
     body.replaceChildren();
     if (key === 'data') data();
     else if (key === 'properties') props();
-    else advanced();
   }
   function data() {
     if (session.doc && record.kind === 'ui') {
@@ -73,6 +88,7 @@ export function renderInspector(host, session, record, context) {
         section.append(
           listEditor({
             title: list.label,
+            view: context.view?.('list/' + JSON.stringify(list.path)) || {},
             columns: list.columns,
             rows: list.rows.map((row) => ({ source: row, values: row.values })),
             onSave: (rows) =>
@@ -88,7 +104,11 @@ export function renderInspector(host, session, record, context) {
           }),
         );
         body.append(section);
-        if (list.kind === 'choice' && formalConfig(session.doc, record))
+        if (
+          session.doc.container.version === 1 &&
+          list.kind === 'choice' &&
+          formalConfig(session.doc, record)
+        )
           section.append(
             button('+ Formal Variable', () =>
               context.run(() =>
@@ -138,14 +158,16 @@ export function renderInspector(host, session, record, context) {
     if (!nodes.length && !body.children.length) {
       body.append(
         el('div', 'empty-state', 'No list or custom-variable data on this object.'),
-        button(
-          'Edit properties',
-          () => {
-            context.setTab('properties');
-            draw('properties');
-          },
-          'primary',
-        ),
+        session.doc && properties(record, session.doc.bytes(record)).length
+          ? button(
+              'Edit properties',
+              () => {
+                context.setTab('properties');
+                context.refresh();
+              },
+              'primary',
+            )
+          : el('p', 'muted', 'Other data on this object is preserved when you export.'),
       );
       return;
     }
@@ -187,118 +209,9 @@ export function renderInspector(host, session, record, context) {
     }
     if (!items.length)
       body.append(
-        el('div', 'empty-state', 'No mapped properties for this object.'),
-        button('Inspect stored fields', () => {
-          context.setTab('advanced');
-          draw('advanced');
-        }),
+        el('div', 'empty-state', 'There are no supported properties to edit on this object yet.'),
+        el('p', 'muted', 'This data is preserved when you export the file.'),
       );
-    else body.append(el('p', 'muted', 'Other stored properties are available in Advanced fields.'));
-  }
-  function advanced() {
-    const note = el(
-      'p',
-      'advanced-note',
-      'Edit existing stored values by field path. Field numbers do not establish their meaning; ID references and enum values must remain consistent with the game. Unknown byte blocks are preserved.',
-    );
-    body.append(note);
-    const result = storedFields(session.doc.bytes(record)),
-      search = el('input');
-    search.type = 'search';
-    search.placeholder = 'Filter field paths or values';
-    search.setAttribute('aria-label', 'Filter stored fields');
-    body.append(search);
-    const fieldsHost = el('div');
-    body.append(fieldsHost);
-    let page = 0;
-    const render = () => {
-      fieldsHost.replaceChildren();
-      const query = search.value.toLowerCase(),
-        fields = result.fields.filter(
-          (f) => !query || `${fieldPath(f.path)} ${f.value}`.toLowerCase().includes(query),
-        );
-      fieldsHost.append(
-        el(
-          'p',
-          'node-caption',
-          `${fields.length} stored values${result.truncated ? ' · Large branches truncated' : ''}`,
-        ),
-      );
-      for (const item of fields.slice(page * 60, (page + 1) * 60)) {
-        const row = el('div', 'advanced-row'),
-          label = el('div');
-        label.append(el('code', '', fieldPath(item.path)));
-        const kind = el('select');
-        const choices = item.kind === 'fixed32' ? ['fixed32', 'float'] : [item.kind];
-        choices.forEach((k) => {
-          const option = el(
-            'option',
-            '',
-            {
-              fixed32: 'UInt32 bits',
-              fixed64: 'UInt64 bits',
-              uint: 'Varint',
-              text: 'Text',
-              float: 'Float32',
-            }[k],
-          );
-          option.value = k;
-          kind.append(option);
-        });
-        label.append(kind);
-        row.append(label);
-        let value = item.value;
-        const make = () =>
-          control(
-            kind.value === 'text' ? 'String' : kind.value === 'float' ? 'Float' : 'ConfigReference',
-            value,
-            (v) => {
-              session.doc.change(
-                record,
-                writeProperty(session.doc.bytes(record), { ...item, kind: kind.value }, v),
-                'Edit stored field',
-              );
-              context.changed('Updated stored field.');
-            },
-            { label: fieldPath(item.path), disabled: session.doc.container.version !== 1 },
-          );
-        let input = make();
-        row.append(input);
-        kind.onchange = () => {
-          const raw = W.at(session.doc.bytes(record), item.path.slice(0, -1)),
-            [n, i] = item.path.at(-1),
-            f = W.parse(raw).find((f) => f.number === n && f.occurrence === i);
-          value =
-            kind.value === 'float'
-              ? W.float(f.value)
-              : String(new DataView(f.value.buffer, f.value.byteOffset, 4).getUint32(0, true));
-          const next = make();
-          input.replaceWith(next);
-          input = next;
-        };
-        fieldsHost.append(row);
-      }
-      if (fields.length > 60) {
-        const pager = el('div', 'pager'),
-          prev = button('Previous', () => {
-            page--;
-            render();
-          }),
-          next = button('Next', () => {
-            page++;
-            render();
-          });
-        prev.disabled = page === 0;
-        next.disabled = (page + 1) * 60 >= fields.length;
-        pager.append(prev, el('span', 'muted', `Page ${page + 1}`), next);
-        fieldsHost.append(pager);
-      }
-    };
-    search.oninput = () => {
-      page = 0;
-      render();
-    };
-    render();
   }
   draw(selected);
 }

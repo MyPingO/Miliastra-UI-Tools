@@ -1,6 +1,5 @@
 import * as W from './game-wire.mjs';
 const seg = (f) => [f.number, f.occurrence];
-export const fieldPath = (path) => path.map(([n, i]) => `${n}[${i}]`).join(' / ');
 function valueAt(bytes, path, kind, fallback) {
   const parent = W.at(bytes, path.slice(0, -1)),
     [n, i] = path.at(-1),
@@ -70,7 +69,7 @@ export function properties(record, bytes) {
         ...limits,
       });
     } catch {
-      /* Other encodings stay in Advanced fields. */
+      /* Unrecognized encodings remain unchanged. */
     }
   };
   if (record.kind === 'ui') {
@@ -157,53 +156,4 @@ export function properties(record, bytes) {
     }
   }
   return result;
-}
-// Advanced editing retains the existing field's wire type and occurrence.
-// Message/string ambiguity is resolved in favor of preserving the message.
-export function storedFields(bytes) {
-  const result = [];
-  let truncated = false;
-  const walk = (bytes, path, depth) => {
-    if (depth > 24) {
-      truncated = true;
-      return;
-    }
-    for (const f of W.parse(bytes)) {
-      if (result.length >= 20000) {
-        truncated = true;
-        return;
-      }
-      const next = [...path, seg(f)];
-      let kind;
-      if (f.wire === 0) kind = 'uint';
-      else if (f.wire === 5) kind = 'fixed32';
-      else if (f.wire === 1) kind = 'fixed64';
-      else if (f.value.length) {
-        let message = false;
-        try {
-          W.parse(f.value);
-          message = true;
-        } catch {}
-        if (message) {
-          walk(f.value, next, depth + 1);
-          continue;
-        }
-        try {
-          const text = W.string(f.value);
-          if (!/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(text)) kind = 'text';
-        } catch {}
-      }
-      if (kind)
-        result.push({
-          path: next,
-          kind,
-          value: valueAt(bytesRoot, next, kind),
-          label: `Field ${f.number}`,
-          allowMissing: false,
-        });
-    }
-  };
-  const bytesRoot = bytes;
-  walk(bytes, [], 0);
-  return { fields: result, truncated };
 }

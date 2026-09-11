@@ -1,3 +1,5 @@
+const commits = new WeakMap();
+let nextId = 0;
 export function el(tag, cls, text) {
   const node = document.createElement(tag);
   if (cls) node.className = cls;
@@ -22,6 +24,7 @@ export function download(name, data, type = 'application/octet-stream') {
 }
 export function field(label, input) {
   const node = el('label', 'field');
+  if (!input.getAttribute('aria-label')) input.setAttribute('aria-label', label);
   node.append(el('span', 'field-label', label), input);
   return node;
 }
@@ -64,35 +67,72 @@ export function control(type, value, onChange, { label = '', disabled = false } 
   input.setAttribute('aria-label', label);
   input.disabled = disabled;
   input.spellcheck = false;
-  let pending = false;
+  const feedback = el('span', 'input-error');
+  feedback.id = `input-error-${++nextId}`;
+  feedback.setAttribute('role', 'alert');
+  let pending = false,
+    accepted = input.value;
+  const clearError = () => {
+    input.removeAttribute('aria-invalid');
+    input.removeAttribute('aria-describedby');
+    input.setCustomValidity('');
+    input.removeAttribute('title');
+    feedback.remove();
+  };
   input.addEventListener('input', () => {
     pending = true;
     input.dataset.pending = 'true';
   });
   const commit = () => {
-    try {
-      input.removeAttribute('aria-invalid');
-      input.setCustomValidity('');
-      onChange(type === 'Bool' ? input.value === 'true' : input.value);
+    if (input.value === accepted) {
       pending = false;
       delete input.dataset.pending;
+      clearError();
+      return;
+    }
+    try {
+      onChange(type === 'Bool' ? input.value === 'true' : input.value);
+      accepted = input.value;
+      pending = false;
+      delete input.dataset.pending;
+      clearError();
     } catch (error) {
       input.setAttribute('aria-invalid', 'true');
       input.setCustomValidity(error.message);
       input.title = error.message;
+      input.setAttribute('aria-describedby', feedback.id);
+      feedback.textContent = error.message + ' Press Escape to restore the previous value.';
+      input.after(feedback);
       input.dispatchEvent(
         new CustomEvent('editor-error', { bubbles: true, detail: error.message }),
       );
     }
   };
+  commits.set(input, commit);
   input.addEventListener('change', commit);
   input.addEventListener('blur', () => {
     if (pending) commit();
   });
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && (pending || input.hasAttribute('aria-invalid'))) {
+      event.preventDefault();
+      event.stopPropagation();
+      input.value = accepted;
+      pending = false;
+      delete input.dataset.pending;
+      clearError();
+      input.dispatchEvent(new CustomEvent('editor-restored', { bubbles: true }));
+    } else if (event.key === 'Enter' && input.tagName === 'INPUT') {
+      event.preventDefault();
+      commit();
+    }
+  });
   return input;
 }
-export function checkInputs() {
-  const invalid = document.querySelector('[aria-invalid="true"]');
+export function checkInputs(root = document) {
+  // Flush drafts before commands, including keyboard-triggered downloads.
+  for (const input of root.querySelectorAll('[data-pending="true"]')) commits.get(input)?.();
+  const invalid = root.querySelector('[aria-invalid="true"]');
   if (invalid) {
     invalid.focus();
     throw new Error(invalid.validationMessage || 'Fix the highlighted value before continuing.');
@@ -105,16 +145,36 @@ export function modal(title, build) {
     footer = el('div', 'modal-footer'),
     error = el('p', 'error');
   error.setAttribute('role', 'alert');
+  const origin = document.activeElement;
   const close = () => {
     dialog.close();
     dialog.remove();
+    if (origin?.isConnected) origin.focus();
   };
-  header.append(el('h2', '', title), button('×', close, 'icon-button'));
+  const heading = el('h2', '', title),
+    dismiss = button('×', close, 'icon-button');
+  heading.id = `dialog-title-${++nextId}`;
+  dialog.setAttribute('aria-labelledby', heading.id);
+  dismiss.setAttribute('aria-label', 'Close dialog');
+  header.append(heading, dismiss);
   dialog.append(header, body, error, footer);
-  dialog.addEventListener('cancel', () => dialog.remove());
+  dialog.addEventListener('cancel', (event) => {
+    event.preventDefault();
+    close();
+  });
   document.body.append(dialog);
-  build({ body, footer, close, error });
-  dialog.showModal();
+  try {
+    build({ body, footer, close, error });
+    dialog.showModal();
+    body
+      .querySelector(
+        'input:not([disabled]):not([type="file"]), textarea:not([disabled]), select:not([disabled]), button:not([disabled])',
+      )
+      ?.focus();
+  } catch (cause) {
+    dialog.remove();
+    throw cause;
+  }
   return dialog;
 }
 export const numberFormat = (n) =>

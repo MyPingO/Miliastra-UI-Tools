@@ -108,7 +108,7 @@ prefix. The UI inventory shows the full serialized field size instead.
 | 48         |           223 | Unmapped                                                    |
 | 49         |     6,016,253 | Unmapped; preserved                                         |
 
-The object count (7,235) includes only the indexed record families above. The v2 editor also exposes 31 other message sections in its Advanced fields view. It
+The object count (7,235) includes only the indexed record families above. The binary model also indexes 31 other message sections; these are preserved but not shown as editable objects. It
 does not count field-27/2 entries as extra scene entities because their schema
 is not established. It is not a count of every object-like record in the file.
 
@@ -276,14 +276,11 @@ at 601. The empty new bubble has a distinct ID and appears before the existing
 bubbles. The editor changes existing values, retaining bubble identities and
 all other metadata. Creating/removing bubble records is not implemented.
 
-### Advanced fields
+### Supported properties only
 
-Each indexed binary record offers existing scalar/text fields by their exact
-field-number and occurrence path. Varints and fixed-width integer bits use
-unsigned decimal strings; fixed32 also offers an explicit Float32
-interpretation. String/message ambiguities favor retaining the message.
-Unknown byte blocks are not converted to guessed text. This view does not
-infer a field's meaning or repair game references. It is not a complete schema.
+The UI exposes named properties whose schema paths are supported by reference files.
+The former raw field-path inspector has been removed. Other fields remain untouched;
+no arbitrary wire-level controls are presented to users.
 
 There is no automatic asset-to-game merge. Existing project-specific references
 would require a validated remapping/dependency strategy. Use Miliastra's native
