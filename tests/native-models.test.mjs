@@ -12,7 +12,7 @@ import {
   addFormalColumn,
   formalConfig,
 } from '../src/models/ui-lists.mjs';
-import { properties, storedFields, writeProperty } from '../assets/game-properties.mjs';
+import { properties, writeProperty } from '../assets/game-properties.mjs';
 import { readCSV, writeCSV } from '../src/core/csv.mjs';
 const template = (kind) =>
   new BinarySession(
@@ -142,22 +142,27 @@ test('JSON edits preserve wrappers, extra metadata, IDs and undo snapshots', () 
   dictionary.nodes()[0].add();
   dictionary.nodes()[0].add();
   assert.equal(dictionary.nodes()[0].entries.length, 2);
-  dictionary.nodes()[0].entries[1].key.set('Key 1');
-  assert.throws(() => dictionary.export(), /unique/);
+  assert.throws(() => dictionary.nodes()[0].entries[1].key.set('Key 1'), /unique/);
+  assert.doesNotThrow(() => dictionary.export());
 });
-test('stored-field edits preserve wire types and support uint64 without precision loss', () => {
+test('property writes preserve wire types and support uint64 without precision loss', () => {
   const bytes = W.concat([
     W.field(1, 0, 9007199254740993n),
     W.field(2, 2, W.field(501, 2, W.utf8('Caption'))),
     W.field(3, 5, W.floatBytes(1.25)),
     W.field(77, 2, Uint8Array.of(0xff)),
   ]);
-  const fields = storedFields(bytes).fields;
-  const id = fields.find((f) => f.kind === 'uint');
+  const id = { path: [[1, 0]], kind: 'uint' };
   const changed = writeProperty(bytes, id, '18446744073709551615');
   assert.equal(W.integer(changed, 1), 0xffffffffffffffffn);
   assert.throws(() => writeProperty(bytes, id, '18446744073709551616'));
-  const text = fields.find((f) => f.kind === 'text');
+  const text = {
+    path: [
+      [2, 0],
+      [501, 0],
+    ],
+    kind: 'text',
+  };
   const result = writeProperty(bytes, text, 'Hello\nworld');
   assert.equal(W.text(W.message(result, 2), 501), 'Hello\nworld');
   assert.deepEqual(W.one(result, 77).raw, W.one(bytes, 77).raw);

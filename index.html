@@ -15,7 +15,8 @@
   <body>
     <header class="app-header">
       <a href="./" class="brand"
-        ><span class="brand-mark">M</span><span>Miliastra <strong>UI Tools</strong></span></a
+        ><span class="brand-mark" aria-hidden="true">M</span
+        ><span>Miliastra <strong>UI Tools</strong></span></a
       ><span class="header-divider"></span><span class="app-label">Editor</span>
       <div class="header-actions">
         <button id="new">+ New</button><button id="open">Open files</button
@@ -26,12 +27,12 @@
           id="redo"
           class="icon-button"
           disabled
-          title="Redo (Ctrl+Shift+Z)"
+          title="Redo (Ctrl+Shift+Z or Ctrl+Y)"
           aria-label="Redo"
         >
           ↷</button
         ><button id="export" class="primary" disabled>Export file ↓</button
-        ><button id="help" class="icon-button help" aria-label="File support">?</button>
+        ><button id="help" class="icon-button help" aria-label="Help">?</button>
       </div>
       <input id="file-input" type="file" accept=".gia,.gil,.json" multiple hidden />
     </header>
@@ -49,7 +50,7 @@
       </button>
       <div class="start-heading">
         <h2>Create new</h2>
-        <span>Start with an empty component or variable</span>
+        <span>Create a component, Structure, or variable</span>
       </div>
       <div id="templates" class="template-grid"></div>
     </main>

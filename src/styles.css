@@ -18,7 +18,7 @@
     BlinkMacSystemFont,
     'Segoe UI',
     sans-serif;
-  font-size: 14px;
+  font-size: 16px;
 }
 * {
   box-sizing: border-box;
@@ -154,13 +154,13 @@ small,
 .eyebrow {
   text-transform: uppercase;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 650;
   letter-spacing: 1.5px;
 }
 .type-label {
   font:
-    11px ui-monospace,
+    12px ui-monospace,
     SFMono-Regular,
     Consolas,
     monospace;
@@ -171,7 +171,7 @@ small,
   white-space: nowrap;
 }
 .count {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted);
   padding-left: 8px;
 }
@@ -182,7 +182,7 @@ small,
   margin: 12px 0;
 }
 .field-label {
-  font-size: 12px;
+  font-size: 14px;
   color: #b9c4d5;
 }
 .field > textarea,
@@ -226,7 +226,7 @@ small,
   font-weight: 600;
 }
 .app-label {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted);
 }
 .header-divider,
@@ -242,7 +242,7 @@ small,
   gap: 8px;
 }
 .header-actions .help {
-  font-size: 13px;
+  font-size: 14px;
   border: 1px solid var(--line);
   border-radius: 50%;
   width: 24px;
@@ -272,7 +272,7 @@ small,
   border: 0;
   border-radius: 0;
   background: transparent;
-  font-size: 12px;
+  font-size: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -335,7 +335,7 @@ small,
 .file-types {
   margin-left: auto;
   font:
-    11px ui-monospace,
+    12px ui-monospace,
     monospace;
   color: #93a8c4;
 }
@@ -347,7 +347,7 @@ small,
 }
 .start-heading span {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 .template-grid {
   display: grid;
@@ -368,10 +368,10 @@ small,
 }
 .template-card strong {
   font-weight: 550;
-  font-size: 13px;
+  font-size: 14px;
 }
 .template-card > span:not(.template-icon) {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.5;
   color: var(--muted);
 }
@@ -403,15 +403,15 @@ small,
   padding: 0 4px 16px;
 }
 .sidebar-heading h2 {
-  font-size: 13px;
+  font-size: 14px;
 }
 .sidebar-heading span {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--muted);
 }
 .sidebar input {
   background: #0f141c;
-  font-size: 12px;
+  font-size: 14px;
 }
 .record-filters {
   display: flex;
@@ -420,7 +420,7 @@ small,
   margin: 13px 0;
 }
 .record-filters button {
-  font-size: 11px;
+  font-size: 14px;
   padding: 5px 7px;
   border-color: transparent;
   background: transparent;
@@ -457,7 +457,7 @@ small,
 }
 .record-title strong {
   display: block;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -465,7 +465,7 @@ small,
 }
 .record-title small {
   display: block;
-  font-size: 10px;
+  font-size: 14px;
   margin-top: 4px;
 }
 .record-icon {
@@ -486,7 +486,7 @@ small,
   padding-top: 6px;
 }
 .sidebar-pager span {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--muted);
 }
 .inspector {
@@ -510,7 +510,7 @@ small,
   display: flex;
   gap: 12px;
   font:
-    11px ui-monospace,
+    12px ui-monospace,
     monospace;
   color: var(--muted);
 }
@@ -526,7 +526,7 @@ small,
   border-radius: 0;
   background: transparent;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 .inspector-tabs button.active {
   color: var(--accent);
@@ -557,15 +557,15 @@ small,
 .empty-state {
   padding: 35px 15px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 .empty-note {
   padding: 18px 8px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 .node-caption {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.5;
 }
 .readonly {
@@ -588,40 +588,6 @@ small,
 .property-group .field {
   margin: 8px 0;
 }
-.advanced-note {
-  max-width: 900px;
-  font-size: 12px;
-  line-height: 1.7;
-  color: var(--muted);
-  padding: 12px 15px;
-  border-left: 2px solid #6381ab;
-  background: var(--panel);
-}
-.advanced-row {
-  display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(200px, 1.3fr);
-  gap: 18px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--line);
-}
-.advanced-row > div {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 9px;
-}
-.advanced-row code {
-  font-size: 11px;
-  color: var(--muted);
-  overflow-wrap: anywhere;
-}
-.advanced-row select {
-  padding: 3px;
-  font-size: 10px;
-}
-.advanced-row > textarea {
-  width: 100%;
-}
 .table-toolbar {
   display: flex;
   align-items: center;
@@ -631,7 +597,7 @@ small,
 }
 .table-toolbar button {
   padding: 6px 9px;
-  font-size: 11px;
+  font-size: 14px;
 }
 .toolbar-spacer {
   flex: 1;
@@ -646,11 +612,11 @@ small,
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 12px;
+  font-size: 14px;
 }
 .data-table th {
   text-align: left;
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 550;
   color: #9eacc1;
   background: #202834;
@@ -676,7 +642,7 @@ small,
 .data-table textarea,
 .data-table select {
   width: 100%;
-  font-size: 12px;
+  font-size: 14px;
   background: transparent;
   border-color: transparent;
   padding: 7px;
@@ -695,20 +661,20 @@ small,
 .data-table .row-number {
   color: #6f7f96;
   font:
-    10px ui-monospace,
+    12px ui-monospace,
     monospace;
   width: 32px;
   text-align: center;
 }
 .data-table .row-actions {
   white-space: nowrap;
-  width: 118px;
+  width: 152px;
 }
 .data-table .row-actions button {
-  width: 23px;
-  min-width: 23px;
-  height: 25px;
-  font-size: 13px;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  font-size: 14px;
   color: var(--muted);
 }
 .data-table tr:hover {
@@ -720,10 +686,10 @@ small,
   justify-content: flex-end;
   gap: 15px;
   margin-top: 12px;
-  font-size: 11px;
+  font-size: 14px;
 }
 .pager button {
-  font-size: 11px;
+  font-size: 14px;
   padding: 5px 8px;
 }
 .nested-node {
@@ -739,7 +705,7 @@ small,
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  font-size: 12px;
+  font-size: 14px;
 }
 .nested-node > summary:before {
   content: '›';
@@ -762,7 +728,7 @@ small,
   margin-top: 15px;
 }
 .nested-actions button {
-  font-size: 10px;
+  font-size: 14px;
   padding: 5px 8px;
 }
 .statusbar {
@@ -770,12 +736,13 @@ small,
   align-items: center;
   gap: 18px;
   padding: 0 18px;
-  height: 30px;
+  min-height: 40px;
+  height: auto;
   flex: none;
   border-top: 1px solid var(--line);
   background: #141922;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 14px;
 }
 .local-indicator {
   display: flex;
@@ -791,8 +758,9 @@ small,
 }
 #status-message {
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  padding: 8px 0;
 }
 #document-status {
   margin-left: auto;
@@ -830,7 +798,7 @@ dialog::backdrop {
   max-height: 65dvh;
 }
 .modal-body p {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.65;
   color: #afbbcd;
 }
@@ -847,7 +815,7 @@ dialog::backdrop {
 .modal > .error {
   margin: 0;
   padding: 0 22px;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.5;
 }
 .modal > .error:not(:empty) {
@@ -916,10 +884,6 @@ body.dragging:after {
   .property-group {
     grid-template-columns: 1fr;
   }
-  .advanced-row {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
 }
 @media (max-width: 720px) {
   body {
@@ -933,7 +897,7 @@ body.dragging:after {
     padding: 12px;
   }
   .brand {
-    font-size: 13px;
+    font-size: 14px;
   }
   .header-actions {
     gap: 5px;
@@ -941,10 +905,9 @@ body.dragging:after {
   }
   .header-actions button {
     padding: 7px 8px;
-    font-size: 11px;
+    font-size: 14px;
   }
-  .header-actions .action-divider,
-  .header-actions .help {
+  .header-actions .action-divider {
     display: none;
   }
   .header-actions .icon-button {
@@ -1007,7 +970,7 @@ body.dragging:after {
     margin-bottom: 0;
   }
   .record-title small {
-    font-size: 9px;
+    font-size: 14px;
   }
   .sidebar-pager {
     margin-top: 5px;
@@ -1029,7 +992,7 @@ body.dragging:after {
     gap: 14px;
   }
   .inspector-tabs button {
-    font-size: 11px;
+    font-size: 14px;
   }
   .statusbar {
     position: sticky;
@@ -1061,5 +1024,136 @@ body.dragging:after {
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
+  }
+}
+
+/* Shared interaction states and readable working surfaces. */
+.editor-layout.json-document {
+  grid-template-columns: minmax(0, 1fr);
+}
+.editor-layout.json-document > .sidebar {
+  display: none;
+}
+.input-error {
+  display: block;
+  color: var(--danger);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  margin-top: 6px;
+  max-width: 34rem;
+  overflow-wrap: anywhere;
+}
+.data-table :is(input, textarea, select)[aria-invalid='true'] {
+  border-color: var(--danger);
+  background: #351f29;
+}
+.data-table :is(input, textarea, select):focus {
+  border-color: var(--accent);
+  background: #121820;
+}
+.data-table td.row-actions {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  background: var(--panel);
+  box-shadow: -1px 0 var(--line);
+}
+.data-table th.row-actions {
+  right: 0;
+  z-index: 3;
+}
+.table-scroll:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.inspector-header h1,
+.section-heading h2,
+.nested-node summary span {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.read-only-notice {
+  margin: 0 30px 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.file-tab .close-file {
+  flex-shrink: 0;
+}
+.modal-footer {
+  flex-wrap: wrap;
+}
+.modal-body :is(input, select, textarea),
+.field-label,
+.data-table :is(input, textarea, select) {
+  font-size: 0.875rem;
+}
+.record-title small,
+.count,
+.object-meta,
+.sidebar-pager span {
+  font-size: 0.75rem;
+}
+.statusbar {
+  font-size: 0.875rem;
+}
+@media (max-width: 720px) {
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  .header-actions button {
+    min-height: 36px;
+  }
+  .header-actions .icon-button {
+    min-width: 32px;
+  }
+  .header-actions .help {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    position: absolute;
+    top: 10px;
+    right: 12px;
+  }
+  .app-header {
+    position: relative;
+  }
+  .record-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sidebar {
+    min-height: 180px;
+    max-height: 320px;
+  }
+  .file-tabs {
+    max-width: 100vw;
+  }
+  .inspector {
+    min-width: 0;
+  }
+  .inspector-tabs {
+    flex-wrap: wrap;
+  }
+  .section-heading {
+    flex-wrap: wrap;
+  }
+  .statusbar {
+    gap: 10px;
+    padding: 0 12px;
+  }
+  #document-status {
+    white-space: normal;
+    min-width: 65px;
+    text-align: right;
+  }
+  .table-toolbar {
+    gap: 8px;
+  }
+  .table-toolbar button,
+  .nested-actions button {
+    min-height: 36px;
   }
 }

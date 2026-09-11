@@ -9,6 +9,10 @@ export function valueEditor(node, context, depth = 0) {
       node.label,
       (v) => {
         node.rename(v);
+        const heading =
+          host.closest('.nested-node')?.querySelector('summary span') ||
+          host.closest('.editor-section')?.querySelector('h2');
+        if (heading) heading.textContent = v;
         context.changed('Renamed field.');
       },
       { label: 'Name' },
@@ -46,7 +50,7 @@ export function valueEditor(node, context, depth = 0) {
   }
   if (node.addRow)
     host.append(
-      button('+ Row', () =>
+      button('Add row', () =>
         context.run(() => {
           node.addRow();
           context.refresh();
@@ -93,6 +97,7 @@ export function valueEditor(node, context, depth = 0) {
     host.append(
       listEditor({
         title: node.label,
+        view: context.view?.(node.key) || {},
         columns: [{ id: 'value', label: node.element, type: node.element }],
         rows: node.value.map((value) => ({ values: { value } })),
         defaultRow: () => ({ values: { value: defaultValue } }),
@@ -116,64 +121,70 @@ export function valueEditor(node, context, depth = 0) {
       el(
         'p',
         'node-caption',
-        `${node.keyType || ''} → ${node.valueType || ''} · ${children.length} entries${node.editable ? '' : ' · Unmatched binary mirrors are read-only'}`,
+        `${node.keyType || ''} → ${node.valueType || ''} · ${children.length} ${children.length === 1 ? 'entry' : 'entries'}${node.editable ? '' : ' · Editing this dictionary is not supported yet'}`,
       ),
     );
   if (node.add) {
-    const b = button(node.kind === 'dictionary' ? '+ Entry' : '+ Field', () => {
-      if (node.kind === 'dictionary') {
-        context.run(() => {
-          node.add();
-          context.refresh();
-          context.changed('Added entry.');
+    const b = button(node.kind === 'dictionary' ? 'Add entry' : 'Add field', () =>
+      context.run(() => {
+        if (node.kind === 'dictionary') {
+          context.run(() => {
+            node.add();
+            context.refresh();
+            context.changed('Added entry.');
+          });
+          return;
+        }
+        modal('Add Structure field', ({ body, footer, close, error }) => {
+          const name = el('input');
+          name.placeholder = 'Field name';
+          const type = el('select');
+          JSON_TYPES.forEach((t) => {
+            const o = el('option', '', t);
+            o.value = t;
+            type.append(o);
+          });
+          body.append(field('Name', name), field('Type', type));
+          footer.append(
+            button('Cancel', close),
+            button(
+              'Add',
+              () => {
+                try {
+                  node.add(type.value, name.value.trim() || undefined);
+                  context.refresh();
+                  context.changed('Added field.');
+                  close();
+                } catch (e) {
+                  error.textContent = e.message;
+                }
+              },
+              'primary',
+            ),
+          );
         });
-        return;
-      }
-      modal('Add Structure field', ({ body, footer, close, error }) => {
-        const name = el('input');
-        name.placeholder = 'Field name';
-        const type = el('select');
-        JSON_TYPES.forEach((t) => {
-          const o = el('option', '', t);
-          o.value = t;
-          type.append(o);
-        });
-        body.append(field('Name', name), field('Type', type));
-        footer.append(
-          button('Cancel', close),
-          button(
-            'Add',
-            () => {
-              try {
-                node.add(type.value, name.value.trim() || undefined);
-                context.refresh();
-                context.changed('Added field.');
-                close();
-              } catch (e) {
-                error.textContent = e.message;
-              }
-            },
-            'primary',
-          ),
-        );
-      });
-    });
+      }),
+    );
     host.append(b);
   }
   if (!children.length) {
     host.append(el('p', 'empty-note', node.kind === 'rows' ? 'This list is empty.' : 'No fields.'));
     return host;
   }
-  let page = 0;
+  const view = context.view?.(node.key) || {};
+  let page = view.page || 0;
   const body = el('div');
   host.append(body);
   function draw() {
     body.replaceChildren();
     const count = 20;
+    page = Math.min(page, Math.max(0, Math.ceil(children.length / count) - 1));
+    view.page = page;
     for (const item of children.slice(page * count, (page + 1) * count)) {
       const detail = el('details', 'nested-node'),
         summary = el('summary');
       detail.dataset.nodeKey = node.key + '/' + item.index;
+      const detailView = context.view?.(detail.dataset.nodeKey) || {};
       summary.append(
         el('span', '', item.label),
         el('span', 'type-label', item.child?.type || 'Entry'),
@@ -181,6 +192,7 @@ export function valueEditor(node, context, depth = 0) {
       detail.append(summary);
       let loaded = false;
       detail.addEventListener('toggle', () => {
+        detailView.open = detail.open;
         if (!detail.open || loaded) return;
         loaded = true;
         const inner = el('div', 'nested-body');
@@ -215,18 +227,22 @@ export function valueEditor(node, context, depth = 0) {
         detail.append(inner);
       });
       body.append(detail);
-      if (depth === 0 && children.length <= 3) detail.open = true;
+      detail.open = detailView.open ?? (depth === 0 && children.length <= 3);
     }
     if (children.length > count) {
       const pager = el('div', 'pager'),
-        prev = button('Previous', () => {
-          page--;
-          draw();
-        }),
-        next = button('Next', () => {
-          page++;
-          draw();
-        });
+        prev = button('Previous', () =>
+          context.run(() => {
+            page--;
+            draw();
+          }),
+        ),
+        next = button('Next', () =>
+          context.run(() => {
+            page++;
+            draw();
+          }),
+        );
       prev.disabled = page === 0;
       next.disabled = (page + 1) * count >= children.length;
       pager.append(

@@ -11,10 +11,11 @@ export function listEditor({
   minRows = 0,
   editable = true,
   defaultRow,
+  view = {},
 }) {
   const host = el('div', 'list-editor');
   let rows = initial.map((r) => ({ ...r, values: { ...r.values } })),
-    page = 0;
+    page = view.page || 0;
   const pageSize = 40;
   const run = (action) => {
     try {
@@ -41,7 +42,7 @@ export function listEditor({
     const values = normalize(next);
     onSave(values);
     rows = values;
-    notify(`Saved ${title.toLowerCase()}.`);
+    notify(`Updated ${title.toLowerCase()}. Export the file to keep your changes.`);
   };
   const clone = (row) => ({ ...row, values: structuredClone(row.values) });
   const exportData = (format) => {
@@ -67,6 +68,7 @@ export function listEditor({
         ]),
         'text/csv',
       );
+    notify(`Downloaded ${title} as ${format.toUpperCase()}.`);
   };
   const bulk = () =>
     modal('Edit list data', ({ body, footer, error, close }) => {
@@ -98,19 +100,38 @@ export function listEditor({
               : rows.map((r) => r.values[columns[0].id]).join('\n');
       };
       fill();
-      format.onchange = fill;
+      let previousFormat = format.value;
+      const drafts = new Map();
+      format.onchange = () => {
+        drafts.set(previousFormat, text.value);
+        if (drafts.has(format.value)) text.value = drafts.get(format.value);
+        else fill();
+        previousFormat = format.value;
+        error.textContent = '';
+      };
       const upload = el('input');
       upload.type = 'file';
       upload.accept = '.json,.csv,.txt';
       upload.onchange = async () => {
         const file = upload.files[0];
         if (file) {
-          format.value = file.name.endsWith('.csv')
-            ? 'CSV'
-            : file.name.endsWith('.txt')
-              ? 'Lines'
-              : 'JSON';
-          text.value = await file.text();
+          try {
+            const extension = file.name.toLowerCase().split('.').at(-1);
+            if (!['csv', 'txt', 'json'].includes(extension))
+              throw new Error('Choose a JSON, CSV, or text file.');
+            if (extension === 'txt' && columns.length > 1)
+              throw new Error('Use JSON or CSV for a list with multiple columns.');
+            if (file.size > 8 * 1024 * 1024)
+              throw new Error('List data files must be smaller than 8 MB.');
+            const value = await file.text();
+            drafts.set(format.value, text.value);
+            format.value = extension === 'csv' ? 'CSV' : extension === 'txt' ? 'Lines' : 'JSON';
+            previousFormat = format.value;
+            text.value = value;
+            error.textContent = '';
+          } catch (e) {
+            error.textContent = e.message;
+          }
         }
       };
       body.append(
@@ -124,11 +145,16 @@ export function listEditor({
         field('Format', format),
         text,
         field('Import data file', upload),
+        el(
+          'p',
+          'muted',
+          `Applying replaces this list's ${rows.length} ${rows.length === 1 ? 'row' : 'rows'}. Each format keeps its own draft until this dialog closes.`,
+        ),
       );
       footer.append(
         button('Cancel', close),
         button(
-          'Apply',
+          'Replace list',
           () => {
             try {
               let values;
@@ -184,6 +210,7 @@ export function listEditor({
         o.value = String(i);
         template.append(o);
       });
+      const column = columns[0];
       const pattern = el('input');
       pattern.value = 'Item {n}';
       const count = el('input');
@@ -192,12 +219,24 @@ export function listEditor({
       const start = el('input');
       start.value = '1';
       start.inputMode = 'numeric';
+      const sequence = !['String', 'Bool', 'Vector3'].includes(column.type);
+      if (!rows.length) template.append(el('option', '', 'Default values'));
       body.append(
+        el(
+          'p',
+          'muted',
+          column.type === 'String'
+            ? `Append rows and fill “${column.label}” using the pattern. Other values are copied from the template row.`
+            : sequence
+              ? `Append a number sequence in “${column.label}”. Other values are copied from the template row.`
+              : 'Append copies of the template row.',
+        ),
         field('Template row', template),
-        field('Name pattern · {n} is the row number', pattern),
-        field('Count', count),
-        field('Start at', start),
       );
+      if (column.type === 'String')
+        body.append(field('Name pattern · {n} is the row number', pattern));
+      body.append(field('Count', count));
+      if (column.type === 'String' || sequence) body.append(field('Start at', start));
       footer.append(
         button('Cancel', close),
         button(
@@ -210,12 +249,13 @@ export function listEditor({
                 !Number.isInteger(amount) ||
                 amount < 1 ||
                 amount > 10000 ||
-                !Number.isSafeInteger(first)
+                !Number.isSafeInteger(first) ||
+                !start.value.trim() ||
+                !Number.isSafeInteger(first + amount - 1)
               )
                 throw new Error('Enter a count of 1–10,000 and a whole start number.');
               const source = rows[Number(template.value)] || defaultRow?.();
               if (!source) throw new Error('Add a template row first.');
-              const column = columns[0];
               const generated = Array.from({ length: amount }, (_, i) => {
                 const row = clone(source);
                 row.values[column.id] =
@@ -243,11 +283,24 @@ export function listEditor({
   function draw() {
     host.replaceChildren();
     const toolbar = el('div', 'table-toolbar');
-    const add = button('+ Row', () =>
+    const add = button('Add row', () =>
       run(() => {
-        const source = rows.at(-1) || defaultRow?.();
+        const source = defaultRow?.() || rows.at(-1);
         if (!source) throw new Error('No template row available.');
-        save([...rows, clone(source)]);
+        const fresh = clone(source);
+        if (!defaultRow)
+          for (const c of columns) {
+            if (c.preserveOnAdd || !(c.id in fresh.values)) continue;
+            fresh.values[c.id] =
+              c.type === 'String'
+                ? ''
+                : c.type === 'Bool'
+                  ? false
+                  : c.type === 'Vector3'
+                    ? [0, 0, 0]
+                    : 0;
+          }
+        save([...rows, fresh]);
         page = Math.floor((rows.length - 1) / pageSize);
         draw();
       }),
@@ -260,23 +313,43 @@ export function listEditor({
       generateButton,
       bulkButton,
       el('span', 'toolbar-spacer'),
-      button('JSON ↓', () => exportData('json')),
-      button('CSV ↓', () => exportData('csv')),
-      el('span', 'count', `${rows.length} rows`),
+      button('JSON ↓', () => run(() => exportData('json'))),
+      button('CSV ↓', () => run(() => exportData('csv'))),
+      el('span', 'count', `${rows.length} ${rows.length === 1 ? 'row' : 'rows'}`),
     );
     host.append(toolbar);
+    if (!editable)
+      host.append(
+        el(
+          'p',
+          'muted',
+          'This list can be viewed and downloaded. Editing this format is not supported yet.',
+        ),
+      );
+    else if (minRows)
+      host.append(
+        el(
+          'p',
+          'node-caption',
+          'Keep at least one row. Duplicate copies a row; Add row starts new values using the same component settings.',
+        ),
+      );
     if (!rows.length) {
       host.append(el('p', 'empty-note', 'No rows. Add a row or import data.'));
       return;
     }
     page = Math.max(0, Math.min(page, Math.ceil(rows.length / pageSize) - 1));
+    view.page = page;
     const wrap = el('div', 'table-scroll'),
       table = el('table', 'data-table'),
       thead = el('thead'),
       tr = el('tr');
+    wrap.setAttribute('role', 'region');
+    wrap.setAttribute('aria-label', title + ' rows');
+    wrap.tabIndex = 0;
     tr.append(el('th', 'row-number', '#'));
     columns.forEach((c) => tr.append(el('th', '', c.label)));
-    tr.append(el('th', 'row-actions', ''));
+    tr.append(el('th', 'row-actions', 'Actions'));
     thead.append(tr);
     table.append(thead);
     const tbody = el('tbody');
@@ -320,6 +393,9 @@ export function listEditor({
               if (action === 'duplicate') next.splice(i + 1, 0, clone(next[i]));
               if (action === 'remove') next.splice(i, 1);
               save(next);
+              if (action === 'up' || action === 'down')
+                page = Math.floor((i + (action === 'up' ? -1 : 1)) / pageSize);
+              if (action === 'duplicate') page = Math.floor((i + 1) / pageSize);
               draw();
             }),
           'icon-button',
@@ -339,6 +415,8 @@ export function listEditor({
     table.append(tbody);
     wrap.append(table);
     host.append(wrap);
+    wrap.scrollLeft = view.scrollLeft || 0;
+    wrap.onscroll = () => (view.scrollLeft = wrap.scrollLeft);
     if (rows.length > pageSize) {
       const pager = el('div', 'pager'),
         prev = button('Previous', () =>
@@ -360,7 +438,7 @@ export function listEditor({
         el(
           'span',
           'muted',
-          `${page * pageSize + 1}–${Math.min((page + 1) * pageSize, rows.length)}`,
+          `${page * pageSize + 1}–${Math.min((page + 1) * pageSize, rows.length)} of ${rows.length}`,
         ),
         next,
       );
